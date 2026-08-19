@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+.env
+fohow.db
+.git/
+*.sqlite
+*.db
+.DS_Store

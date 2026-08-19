@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FoHow Natural Solutions — Admin</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f4f0;--surface:#ffffff;--surface2:#f2ede8;--border:#e0d8d0;--border2:#c8bfb5;
+  --text:#1a1614;--text2:#6b5f57;--text3:#a09288;
+  --red:#8B1A1A;--red2:#6e1515;--red-light:#fdf0f0;--red-text:#5c1010;
+  --gold:#b8860b;--gold-light:#fdf8e8;--gold-text:#6e4800;
+  --green:#2d6a2d;--green-light:#edf7ed;--green-text:#1a4a1a;
+  --blue:#185FA5;--blue-light:#eaf2fc;--blue-text:#0c3d6e;
+  --orange:#c25a00;--orange-light:#fff3e8;--orange-text:#7a3800;
+  --radius:8px;--radius-lg:12px;--shadow:0 1px 3px rgba(0,0,0,0.08);
+}
+body{font-family:'Georgia',serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+.topbar{background:var(--red);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.logo{display:flex;align-items:center;gap:12px;color:#f5e6a3}
+.logo-mark{width:36px;height:36px;border-radius:50%;border:2px solid #f5e6a3;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;letter-spacing:1px}
+.logo-name{font-size:15px;font-weight:700;letter-spacing:0.5px}
+.logo-sub{font-size:11px;opacity:0.7;font-style:italic}
+.topbar-right{display:flex;gap:8px}
+.nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;gap:2px;overflow-x:auto}
+.nav-btn{padding:12px 16px;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--text2);display:flex;align-items:center;gap:7px;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;font-family:inherit;transition:color 0.15s}
+.nav-btn:hover{color:var(--text)}
+.nav-btn.active{color:var(--red);border-bottom-color:var(--red);font-weight:600}
+.nav-btn i{font-size:16px}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.section{display:none}
+.section.active{display:block}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap}
+.page-title{font-size:20px;font-weight:700;color:var(--text)}
+.page-sub{font-size:13px;color:var(--text2);margin-top:2px;font-style:italic}
+.hdr-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{padding:8px 16px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--surface);cursor:pointer;font-size:13px;color:var(--text);display:inline-flex;align-items:center;gap:6px;transition:all 0.15s;font-family:inherit;white-space:nowrap}
+.btn:hover{background:var(--surface2);border-color:var(--border2)}
+.btn:active{transform:scale(0.98)}
+.btn-primary{background:var(--red);color:#f5e6a3;border-color:var(--red)}
+.btn-primary:hover{background:var(--red2)}
+.btn-success{background:var(--green);color:var(--green-light);border-color:var(--green)}
+.btn-success:hover{background:#225022}
+.btn-gold{background:var(--gold);color:#fff8e0;border-color:var(--gold)}
+.btn-gold:hover{background:#9a7209}
+.btn-danger{background:var(--red-light);color:var(--red-text);border-color:#e8b8b8}
+.btn-danger:hover{background:#f5dada}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-xs{padding:3px 8px;font-size:11px}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--red)}
+.stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px}
+.stat-value{font-size:24px;font-weight:700;color:var(--text);line-height:1}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:4px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:16px;overflow:hidden}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.card-title{font-size:14px;font-weight:600;color:var(--text)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 14px;color:var(--text2);font-weight:600;border-bottom:1px solid var(--border);background:var(--surface2);font-size:12px;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--surface2)}
+.empty-state{text-align:center;padding:48px 20px;color:var(--text2)}
+.empty-state i{font-size:48px;display:block;margin-bottom:12px;opacity:0.25;color:var(--red)}
+.empty-state p{font-size:14px}
+.empty-state small{font-size:12px;color:var(--text3);display:block;margin-top:4px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge-student{background:var(--blue-light);color:var(--blue-text)}
+.badge-dist{background:var(--gold-light);color:var(--gold-text)}
+.badge-paid{background:var(--green-light);color:var(--green-text)}
+.badge-pending{background:var(--orange-light);color:var(--orange-text)}
+.badge-red{background:var(--red-light);color:var(--red-text)}
+.badge-qualified{background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7}
+.badge-unqualified{background:#fff8e1;color:#e65100;border:1px solid #ffcc80}
+.tier-progress{height:5px;background:var(--border);border-radius:4px;overflow:hidden;margin-top:5px}
+.tier-progress-bar{height:100%;background:linear-gradient(90deg,var(--gold),#e8a020);border-radius:4px;transition:width 0.4s}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--red-light);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--red);flex-shrink:0;border:1px solid #e8c8c8}
+.person-cell{display:flex;align-items:center;gap:10px}
+.person-info .name{font-weight:600;font-size:13px}
+.person-info .sub{font-size:11px;color:var(--text3)}
+.points-badge{background:var(--gold-light);color:var(--gold-text);padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px}
+.actions-cell{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.search-wrap{position:relative;min-width:220px}
+.search-wrap input{padding-left:36px;font-size:13px}
+.search-wrap .ti-search{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--text3);pointer-events:none}
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(26,22,20,0.5);z-index:200;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(2px)}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);padding:0;width:min(540px,100%);max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.15)}
+.modal-hdr{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:16px;font-weight:700;color:var(--text)}
+.modal-close{background:none;border:none;cursor:pointer;font-size:20px;color:var(--text3);padding:2px;line-height:1}
+.modal-close:hover{color:var(--red)}
+.modal-body{padding:20px 22px}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+/* FORM */
+.form-group{margin-bottom:14px}
+.form-label{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:0.5px}
+.form-label span{color:var(--red)}
+input[type=text],input[type=tel],input[type=number],input[type=date],input[type=url],input[type=email],select,textarea{
+  width:100%;padding:9px 11px;border:1px solid var(--border2);border-radius:var(--radius);font-size:13px;
+  background:var(--surface);color:var(--text);font-family:inherit;transition:border-color 0.15s
+}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(139,26,26,0.08)}
+textarea{resize:vertical;min-height:70px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-note{font-size:11px;color:var(--text3);margin-top:4px;font-style:italic}
+.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
+.promote-box{background:var(--gold-light);border:1px solid #e8d08a;border-radius:var(--radius);padding:12px 14px;margin-bottom:14px}
+.promote-box .form-label{color:var(--gold-text)}
+/* RESOURCES */
+.resource-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.res-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;display:flex;gap:12px;transition:border-color 0.15s}
+.res-card:hover{border-color:var(--border2)}
+.res-icon{width:44px;height:44px;border-radius:var(--radius);background:var(--red-light);display:flex;align-items:center;justify-content:center;color:var(--red);font-size:22px;flex-shrink:0}
+.res-body{flex:1;min-width:0}
+.res-title{font-size:14px;font-weight:700;margin-bottom:3px}
+.res-desc{font-size:12px;color:var(--text2);margin-bottom:8px}
+.res-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.tag{background:var(--surface2);color:var(--text2);padding:2px 8px;border-radius:10px;font-size:11px;border:1px solid var(--border)}
+/* OVERVIEW */
+.sale-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)}
+.sale-row:last-child{border:none}
+/* RANGE */
+input[type=range]{-webkit-appearance:none;height:4px;background:var(--border2);border-radius:4px;outline:none;border:none;padding:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--red);cursor:pointer}
+.range-row{display:flex;align-items:center;gap:10px}
+.range-row input[type=range]{flex:1}
+.range-val{min-width:52px;font-size:13px;font-weight:600;color:var(--red)}
+/* toast */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--green);color:#fff;padding:10px 18px;border-radius:var(--radius);font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;display:flex;align-items:center;gap:8px}
+.toast.show{opacity:1}
+/* detail modal distributor */
+.detail-stat{background:var(--surface2);border-radius:var(--radius);padding:12px 14px;text-align:center}
+.detail-stat .v{font-size:20px;font-weight:700}
+.detail-stat .l{font-size:11px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:0.5px}
+@media(max-width:600px){.form-row{grid-template-columns:1fr}.hdr-actions{width:100%}.stats-row{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-mark">FH</div>
+    <div>
+      <div class="logo-name">FoHow Natural Solutions</div>
+      <div class="logo-sub">Admin Management System</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button class="btn btn-sm" style="background:rgba(245,230,163,0.15);color:#f5e6a3;border-color:rgba(245,230,163,0.3)" onclick="exportAll()">
+      <i class="ti ti-table-export"></i> Export all data
+    </button>
+    <a class="btn btn-sm" href="/logout" style="background:rgba(245,230,163,0.15);color:#f5e6a3;border-color:rgba(245,230,163,0.3);text-decoration:none">
+      <i class="ti ti-logout"></i> Logout
+    </a>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" id="nav-overview" onclick="showSection('overview')"><i class="ti ti-layout-dashboard"></i>Overview</button>
+  <button class="nav-btn" id="nav-students" onclick="showSection('students')"><i class="ti ti-users"></i>Students</button>
+  <button class="nav-btn" id="nav-distributors" onclick="showSection('distributors')"><i class="ti ti-award"></i>Distributors</button>
+  <button class="nav-btn" id="nav-clients" onclick="showSection('clients')"><i class="ti ti-user-check"></i>Clients</button>
+  <button class="nav-btn" id="nav-commissions" onclick="showSection('commissions')"><i class="ti ti-receipt-2"></i>Commissions</button>
+  <button class="nav-btn" id="nav-resources" onclick="showSection('resources')"><i class="ti ti-books"></i>Resources</button>
+</div>
+
+<div class="content">
+
+<!-- OVERVIEW -->
+<div class="section active" id="section-overview">
+  <div class="page-header">
+    <div><div class="page-title">Dashboard</div><div class="page-sub">Your FoHow network at a glance</div></div>
+  </div>
+  <div class="stats-row" id="ov-stats"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="card">
+      <div class="card-header"><div class="card-title"><i class="ti ti-receipt-2"></i> Recent commissions</div></div>
+      <div style="padding:4px 16px" id="ov-recent"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title"><i class="ti ti-trophy"></i> Top distributors by points</div></div>
+      <div style="padding:4px 16px" id="ov-top"></div>
+    </div>
+  </div>
+</div>
+
+<!-- STUDENTS -->
+<div class="section" id="section-students">
+  <div class="page-header">
+    <div><div class="page-title">Students</div><div class="page-sub">People learning your network — not yet made a sale</div></div>
+    <div class="hdr-actions">
+      <button class="btn" onclick="exportSheet('students')"><i class="ti ti-file-spreadsheet"></i>Export</button>
+      <button class="btn btn-primary" onclick="openModal('m-student')"><i class="ti ti-plus"></i>Add student</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title" id="students-count"></div>
+      <div class="search-wrap"><i class="ti ti-search"></i><input type="text" placeholder="Search…" oninput="filterTable('tbl-students',this.value)"></div>
+    </div>
+    <div class="table-wrap">
+      <table id="tbl-students">
+        <thead><tr><th>Name</th><th>Phone</th><th>Location</th><th>Joined</th><th>Notes</th><th>Actions</th></tr></thead>
+        <tbody id="tb-students"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- DISTRIBUTORS -->
+<div class="section" id="section-distributors">
+  <div class="page-header">
+    <div><div class="page-title">Distributors</div><div class="page-sub">Students who successfully referred a buying client</div></div>
+    <div class="hdr-actions">
+      <button class="btn" onclick="exportSheet('distributors')"><i class="ti ti-file-spreadsheet"></i>Export</button>
+      <button class="btn btn-primary" onclick="openModal('m-dist')"><i class="ti ti-plus"></i>Add distributor</button>
+    </div>
+  </div>
+  <div class="stats-row" id="dist-stats"></div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title" id="dist-count"></div>
+      <div class="search-wrap"><i class="ti ti-search"></i><input type="text" placeholder="Search…" oninput="filterTable('tbl-dist',this.value)"></div>
+    </div>
+    <div class="table-wrap">
+      <table id="tbl-dist">
+        <thead><tr><th>Name</th><th>Tier</th><th>Phone</th><th>Since</th><th>Sales</th><th>Total commission</th><th>Paid out</th><th>Balance</th><th>PV / Points</th><th>Actions</th></tr></thead>
+        <tbody id="tb-dist"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- CLIENTS -->
+<div class="section" id="section-clients">
+  <div class="page-header">
+    <div><div class="page-title">Clients</div><div class="page-sub">People who have purchased medicine</div></div>
+    <div class="hdr-actions">
+      <button class="btn" onclick="exportSheet('clients')"><i class="ti ti-file-spreadsheet"></i>Export</button>
+      <button class="btn btn-primary" onclick="openModal('m-client')"><i class="ti ti-plus"></i>Add client</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title" id="clients-count"></div>
+      <div class="search-wrap"><i class="ti ti-search"></i><input type="text" placeholder="Search…" oninput="filterTable('tbl-clients',this.value)"></div>
+    </div>
+    <div class="table-wrap">
+      <table id="tbl-clients">
+        <thead><tr><th>Name</th><th>Phone</th><th>Referred by</th><th>Products</th><th>Amount (KSh)</th><th>Date</th><th>Notes</th><th>Actions</th></tr></thead>
+        <tbody id="tb-clients"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- COMMISSIONS -->
+<div class="section" id="section-commissions">
+  <div class="page-header">
+    <div><div class="page-title">Commissions</div><div class="page-sub">Sales records and commission tracking</div></div>
+    <div class="hdr-actions">
+      <button class="btn" onclick="exportSheet('commissions')"><i class="ti ti-file-spreadsheet"></i>Export</button>
+      <button class="btn btn-primary" onclick="openModal('m-sale')"><i class="ti ti-plus"></i>Record sale</button>
+    </div>
+  </div>
+  <div class="stats-row" id="comm-stats"></div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title" id="comm-count"></div>
+      <div class="search-wrap"><i class="ti ti-search"></i><input type="text" placeholder="Search…" oninput="filterTable('tbl-comm',this.value)"></div>
+    </div>
+    <div class="table-wrap">
+      <table id="tbl-comm">
+        <thead><tr><th>Date</th><th>Distributor</th><th>Client</th><th>Products</th><th>Sale value (KSh)</th><th>Commission (KSh)</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="tb-comm"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- RESOURCES -->
+<div class="section" id="section-resources">
+  <div class="page-header">
+    <div><div class="page-title">Resources</div><div class="page-sub">Training materials and documents for your network</div></div>
+    <div class="hdr-actions">
+      <button class="btn btn-primary" onclick="openModal('m-resource')"><i class="ti ti-plus"></i>Add resource</button>
+    </div>
+  </div>
+  <div class="resource-grid" id="resources-grid"></div>
+</div>
+
+</div><!-- content -->
+
+<!-- ===== MODALS ===== -->
+
+<!-- Student Modal -->
+<div class="modal-bg" id="m-student">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title"><i class="ti ti-user-plus"></i> Add new student</div>
+      <button class="modal-close" onclick="closeModal('m-student')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Full name <span>*</span></label><input type="text" id="s-name" placeholder="e.g. Grace Wanjiru"></div>
+        <div class="form-group"><label class="form-label">Phone</label><input type="tel" id="s-phone" placeholder="e.g. 0712 345 678"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Date joined</label><input type="date" id="s-date"></div>
+        <div class="form-group"><label class="form-label">Location</label><input type="text" id="s-location" placeholder="e.g. Westlands, Nairobi"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Notes</label><textarea id="s-notes" placeholder="Any extra info about this student…"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('m-student')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveStudent()"><i class="ti ti-check"></i>Save student</button>
+    </div>
+  </div>
+</div>
+
+<!-- Distributor Modal -->
+<div class="modal-bg" id="m-dist">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title"><i class="ti ti-award"></i> Add distributor</div>
+      <button class="modal-close" onclick="closeModal('m-dist')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="promote-box">
+        <label class="form-label">Promote an existing student?</label>
+        <select id="d-from-student" onchange="prefillFromStudent()"><option value="">— select a student to auto-fill (optional) —</option></select>
+        <div class="form-note">Selecting a student will remove them from the students list and promote them here.</div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Full name <span>*</span></label><input type="text" id="d-name" placeholder="e.g. Peter Mwangi"></div>
+        <div class="form-group"><label class="form-label">Phone</label><input type="tel" id="d-phone" placeholder="e.g. 0722 111 222"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Active since</label><input type="date" id="d-date"></div>
+        <div class="form-group"><label class="form-label">Location</label><input type="text" id="d-location" placeholder="e.g. Kilimani"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Notes</label><textarea id="d-notes"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('m-dist')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveDist()"><i class="ti ti-check"></i>Save distributor</button>
+    </div>
+  </div>
+</div>
+
+<!-- Client Modal -->
+<div class="modal-bg" id="m-client">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title"><i class="ti ti-user-check"></i> Add client</div>
+      <button class="modal-close" onclick="closeModal('m-client')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Full name <span>*</span></label><input type="text" id="cl-name" placeholder="e.g. Amina Hassan"></div>
+        <div class="form-group"><label class="form-label">Phone</label><input type="tel" id="cl-phone" placeholder="e.g. 0733 000 111"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Referred by</label><select id="cl-referred"><option value="">— no referral / walk-in —</option></select></div>
+        <div class="form-group"><label class="form-label">Date of purchase</label><input type="date" id="cl-date"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Products bought</label><input type="text" id="cl-products" placeholder="e.g. Shuangdanlian, Tianqi Capsules"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Total amount (KSh)</label><input type="number" id="cl-amount" placeholder="e.g. 3500" min="0"></div>
+        <div class="form-group"><label class="form-label">Location</label><input type="text" id="cl-location" placeholder="e.g. Nairobi CBD"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Notes</label><textarea id="cl-notes" rows="2"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('m-client')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveClient()"><i class="ti ti-check"></i>Save client</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sale/Commission Modal -->
+<div class="modal-bg" id="m-sale">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title"><i class="ti ti-receipt-2"></i> Record sale & commission</div>
+      <button class="modal-close" onclick="closeModal('m-sale')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Distributor <span>*</span></label><select id="sl-dist"><option value="">— select —</option></select></div>
+        <div class="form-group"><label class="form-label">Client</label><select id="sl-client"><option value="">— select client —</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">Products / medicine</label><input type="text" id="sl-products" placeholder="e.g. Shuangdanlian oral liquid × 2"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Date</label><input type="date" id="sl-date"></div>
+        <div class="form-group"><label class="form-label">Sale value (KSh) <span>*</span></label><input type="number" id="sl-value" placeholder="e.g. 5000" min="0" oninput="calcComm()"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Commission rate</label>
+        <div class="range-row">
+          <input type="range" id="sl-pct" min="0" max="50" value="10" step="1" oninput="onPctChange()">
+          <span class="range-val" id="sl-pct-lbl">10%</span>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Commission amount (KSh) <span>*</span></label><input type="number" id="sl-comm" placeholder="Auto-calculated or enter manually" min="0"></div>
+      <div class="form-group"><label class="form-label">Notes</label><textarea id="sl-notes" rows="2" placeholder="e.g. product type, special deal…"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('m-sale')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSale()"><i class="ti ti-check"></i>Record sale</button>
+    </div>
+  </div>
+</div>
+
+<!-- Points Modal -->
+<div class="modal-bg" id="m-points">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title"><i class="ti ti-star"></i> Award points</div>
+      <button class="modal-close" onclick="closeModal('m-points')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pt-id">
+      <div class="form-group"><label class="form-label">Distributor</label><input type="text" id="pt-name" readonly style="background:var(--surface2)"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Points to award <span>*</span></label><input type="number" id="pt-pts" min="1" placeholder="e.g. 50"></div>
+        <div class="form-group"><label class="form-label">Reason</label><input type="text" id="pt-reason" placeholder="e.g. First referral bonus"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Notes</label><textarea id="pt-notes" rows="2"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('m-points')">Cancel</button>
+      <button class="btn btn-gold" onclick="savePoints()"><i class="ti ti-star"></i>Award points</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pay Commission Modal -->
+<div class="modal-bg" id="m-pay">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title"><i class="ti ti-circle-check"></i> Mark commission as paid</div>
+      <button class="modal-close" onclick="closeModal('m-pay')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pay-id">
+      <div id="pay-info" style="background:var(--surface2);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;font-size:13px;border:1px solid var(--border)"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Payment date</label><input type="date" id="pay-date"></div>
+        <div class="form-group"><label class="form-label">Method</label>
+          <select id="pay-method"><option>M-Pesa</option><option>Cash</option><option>Bank transfer</option><option>Other</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Reference / Notes</label><input type="text" id="pay-ref" placeholder="e.g. M-Pesa transaction code"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('m-pay')">Cancel</button>
+      <button class="btn btn-success" onclick="markPaid()"><i class="ti ti-check"></i>Mark as paid</button>
+    </div>
+  </div>
+</div>
+
+<!-- Distributor Detail Modal -->
+<div class="modal-bg" id="m-detail">
+  <div class="modal" style="width:min(600px,100%)">
+    <div class="modal-hdr">
+      <div class="modal-title" id="detail-title">Distributor</div>
+      <button class="modal-close" onclick="closeModal('m-detail')">×</button>
+    </div>
+    <div class="modal-body" id="detail-body"></div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal('m-detail')">Close</button></div>
+  </div>
+</div>
+
+<!-- Resource Modal -->
+<div class="modal-bg" id="m-resource">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title"><i class="ti ti-file-plus"></i> Add resource</div>
+      <button class="modal-close" onclick="closeModal('m-resource')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Title <span>*</span></label><input type="text" id="r-title" placeholder="e.g. FoHow Product Guide 2024"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Type</label>
+          <select id="r-type">
+            <option value="guide">Guide / Manual</option>
+            <option value="training">Training material</option>
+            <option value="price">Price list</option>
+            <option value="form">Form / Template</option>
+            <option value="video">Video link</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Link (URL)</label><input type="url" id="r-link" placeholder="https://…"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Description</label><textarea id="r-desc" placeholder="What is this resource about?"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('m-resource')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveResource()"><i class="ti ti-check"></i>Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit modals (Student / Dist / Client / Sale) -->
+<div class="modal-bg" id="m-edit-student">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title"><i class="ti ti-edit"></i> Edit student</div><button class="modal-close" onclick="closeModal('m-edit-student')">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="es-id">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Full name</label><input type="text" id="es-name"></div>
+        <div class="form-group"><label class="form-label">Phone</label><input type="tel" id="es-phone"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Date joined</label><input type="date" id="es-date"></div>
+        <div class="form-group"><label class="form-label">Location</label><input type="text" id="es-location"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Notes</label><textarea id="es-notes"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal('m-edit-student')">Cancel</button><button class="btn btn-primary" onclick="updateStudent()">Save changes</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="m-edit-dist">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title"><i class="ti ti-edit"></i> Edit distributor</div><button class="modal-close" onclick="closeModal('m-edit-dist')">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="ed-id">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Full name</label><input type="text" id="ed-name"></div>
+        <div class="form-group"><label class="form-label">Phone</label><input type="tel" id="ed-phone"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Active since</label><input type="date" id="ed-date"></div>
+        <div class="form-group"><label class="form-label">Location</label><input type="text" id="ed-location"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Notes</label><textarea id="ed-notes"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="closeModal('m-edit-dist')">Cancel</button><button class="btn btn-primary" onclick="updateDist()">Save changes</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><i class="ti ti-check"></i><span id="toast-msg"></span></div>
+
+<script>
+// ========= STATE & STORAGE =========
+let DB={students:[],distributors:[],clients:[],sales:[],resources:[]};
+
+const API_BASE='/api';
+async function api(path,opts){
+  const res=await fetch(API_BASE+path,{headers:{'Content-Type':'application/json'},...opts});
+  if(res.status===401){window.location.href='/login';throw new Error('Session expired');}
+  let body=null;try{body=await res.json();}catch(e){}
+  if(!res.ok){throw new Error((body&&body.error)||'Request failed');}
+  return body;
+}
+async function loadAll(){
+  const data=await api('/all');
+  DB.students=data.students;DB.distributors=data.distributors;
+  DB.clients=data.clients;DB.sales=data.sales;DB.resources=data.resources;
+}
+function today(){return new Date().toISOString().slice(0,10)}
+function fmtDate(d){if(!d)return '—';try{return new Date(d+'T00:00:00').toLocaleDateString('en-KE',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return d}}
+function fmtKsh(n){return 'KSh '+Number(n||0).toLocaleString('en-KE')}
+function initials(n){return (n||'?').split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'?'}
+function gv(id){return (document.getElementById(id)||{}).value||''}
+function sv(id,v){const el=document.getElementById(id);if(el)el.value=v??'';}
+function toast(msg){const t=document.getElementById('toast');document.getElementById('toast-msg').textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800)}
+function distName(id){const d=DB.distributors.find(x=>x.id===id);return d?d.name:'—'}
+function clientName(id){const c=DB.clients.find(x=>x.id===id);return c?c.name:'—'}
+function distSales(id){return DB.sales.filter(s=>s.distId===id)}
+function distComm(id){return distSales(id).reduce((a,s)=>a+(+s.commission||0),0)}
+function distPaid(id){return distSales(id).filter(s=>s.paid).reduce((a,s)=>a+(+s.commission||0),0)}
+function isQualified(d){return (d.points||0)>=500}
+function tierBadge(d){
+  const q=isQualified(d);
+  return `<span class="badge ${q?'badge-qualified':'badge-unqualified'}"><i class="ti ${q?'ti-rosette-discount-check':'ti-clock'}"></i>${q?'Qualified':'Unqualified'}</span>`;
+}
+function checkAutoPromote(d,silent=false){
+  if(!d.qualified&&isQualified(d)){
+    d.qualified=true;
+    d.qualifiedDate=today();
+    if(!silent)toast(`🎉 ${d.name} automatically promoted to Qualified Distributor!`);
+    return true;
+  }
+  return false;
+}
+
+// ========= NAV =========
+function showSection(s){
+  document.querySelectorAll('.section').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(e=>e.classList.remove('active'));
+  document.getElementById('section-'+s).classList.add('active');
+  document.getElementById('nav-'+s).classList.add('active');
+  ({overview:renderOverview,students:renderStudents,distributors:renderDist,clients:renderClients,commissions:renderComm,resources:renderResources})[s]?.();
+}
+
+// ========= MODALS =========
+function openModal(id){
+  document.getElementById(id).classList.add('open');
+  const inits={
+    'm-student':()=>sv('s-date',today()),
+    'm-dist':()=>{sv('d-date',today());populateSel('d-from-student',DB.students,'— select a student —')},
+    'm-client':()=>{sv('cl-date',today());populateSel('cl-referred',DB.distributors,'— no referral / walk-in —')},
+    'm-sale':()=>{sv('sl-date',today());populateSel('sl-dist',DB.distributors,'— select distributor —',true);populateSel('sl-client',DB.clients,'— select client —');sv('sl-pct',10);sv('sl-pct-lbl','');document.getElementById('sl-pct-lbl').textContent='10%'},
+    'm-pay':()=>sv('pay-date',today()),
+  };
+  inits[id]?.();
+}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));
+
+function populateSel(selId,arr,placeholder,required=false){
+  const sel=document.getElementById(selId);if(!sel)return;
+  sel.innerHTML=`<option value="">${placeholder}</option>`;
+  arr.forEach(x=>sel.add(new Option(x.name,x.id)));
+}
+
+// ========= STUDENTS =========
+async function saveStudent(){
+  const name=gv('s-name').trim();if(!name){alert('Name is required');return}
+  try{
+    await api('/students',{method:'POST',body:JSON.stringify({name,phone:gv('s-phone'),date:gv('s-date'),location:gv('s-location'),notes:gv('s-notes')})});
+  }catch(e){alert(e.message);return}
+  closeModal('m-student');['s-name','s-phone','s-date','s-location','s-notes'].forEach(id=>sv(id,''));
+  await loadAll();renderStudents();toast('Student added');
+}
+function editStudentModal(id){
+  const s=DB.students.find(x=>x.id===id);if(!s)return;
+  sv('es-id',id);sv('es-name',s.name);sv('es-phone',s.phone);sv('es-date',s.date);sv('es-location',s.location);sv('es-notes',s.notes);
+  openModal('m-edit-student');
+}
+async function updateStudent(){
+  const id=gv('es-id');const s=DB.students.find(x=>x.id===id);if(!s)return;
+  const payload={name:gv('es-name'),phone:gv('es-phone'),date:gv('es-date'),location:gv('es-location'),notes:gv('es-notes')};
+  try{await api('/students/'+id,{method:'PUT',body:JSON.stringify(payload)});}catch(e){alert(e.message);return}
+  closeModal('m-edit-student');await loadAll();renderStudents();toast('Student updated');
+}
+async function promoteStudent(id){
+  const s=DB.students.find(x=>x.id===id);if(!s)return;
+  if(!confirm(`Promote ${s.name} to distributor? They will be removed from Students.`))return;
+  try{await api('/students/'+id+'/promote',{method:'POST'});}catch(e){alert(e.message);return}
+  await loadAll();renderStudents();renderDist();toast(`${s.name} promoted to distributor`);
+}
+async function deleteStudent(id){
+  if(!confirm('Delete this student?'))return;
+  try{await api('/students/'+id,{method:'DELETE'});}catch(e){alert(e.message);return}
+  await loadAll();renderStudents();toast('Deleted');
+}
+function renderStudents(){
+  document.getElementById('students-count').textContent=`${DB.students.length} student${DB.students.length!==1?'s':''}`;
+  const tb=document.getElementById('tb-students');
+  if(!DB.students.length){tb.innerHTML=`<tr><td colspan="6"><div class="empty-state"><i class="ti ti-users"></i><p>No students yet</p><small>Add your first student using the button above</small></div></td></tr>`;return}
+  tb.innerHTML=DB.students.map(s=>`<tr>
+    <td><div class="person-cell"><div class="avatar">${initials(s.name)}</div><div class="person-info"><div class="name">${s.name}</div></div></div></td>
+    <td>${s.phone||'—'}</td><td>${s.location||'—'}</td><td>${fmtDate(s.date)}</td>
+    <td style="max-width:160px;font-size:12px;color:var(--text2)">${s.notes||'—'}</td>
+    <td><div class="actions-cell">
+      <button class="btn btn-sm btn-primary" onclick="promoteStudent('${s.id}')"><i class="ti ti-arrow-up-right"></i>Promote</button>
+      <button class="btn btn-sm" onclick="editStudentModal('${s.id}')"><i class="ti ti-edit"></i></button>
+      <button class="btn btn-sm btn-danger" onclick="deleteStudent('${s.id}')"><i class="ti ti-trash"></i></button>
+    </div></td>
+  </tr>`).join('');
+}
+
+// ========= DISTRIBUTORS =========
+function prefillFromStudent(){
+  const id=gv('d-from-student');if(!id)return;
+  const s=DB.students.find(x=>x.id===id);if(!s)return;
+  sv('d-name',s.name);sv('d-phone',s.phone);sv('d-location',s.location||'');sv('d-notes',s.notes||'');
+}
+async function saveDist(){
+  const name=gv('d-name').trim();if(!name){alert('Name is required');return}
+  const fromId=gv('d-from-student');
+  try{
+    await api('/distributors',{method:'POST',body:JSON.stringify({name,phone:gv('d-phone'),date:gv('d-date'),location:gv('d-location'),notes:gv('d-notes'),fromStudentId:fromId||null})});
+  }catch(e){alert(e.message);return}
+  closeModal('m-dist');['d-name','d-phone','d-date','d-location','d-notes'].forEach(id=>sv(id,''));
+  await loadAll();renderDist();if(fromId)renderStudents();toast('Distributor added');
+}
+function editDistModal(id){
+  const d=DB.distributors.find(x=>x.id===id);if(!d)return;
+  sv('ed-id',id);sv('ed-name',d.name);sv('ed-phone',d.phone);sv('ed-date',d.date);sv('ed-location',d.location);sv('ed-notes',d.notes);
+  openModal('m-edit-dist');
+}
+async function updateDist(){
+  const id=gv('ed-id');const d=DB.distributors.find(x=>x.id===id);if(!d)return;
+  const payload={name:gv('ed-name'),phone:gv('ed-phone'),date:gv('ed-date'),location:gv('ed-location'),notes:gv('ed-notes')};
+  try{await api('/distributors/'+id,{method:'PUT',body:JSON.stringify(payload)});}catch(e){alert(e.message);return}
+  closeModal('m-edit-dist');await loadAll();renderDist();toast('Distributor updated');
+}
+async function deleteDist(id){
+  if(!confirm('Delete this distributor? Their sales records will remain.'))return;
+  try{await api('/distributors/'+id,{method:'DELETE'});}catch(e){alert(e.message);return}
+  await loadAll();renderDist();toast('Deleted');
+}
+function openPointsModal(id){
+  const d=DB.distributors.find(x=>x.id===id);if(!d)return;
+  sv('pt-id',id);sv('pt-name',d.name);sv('pt-pts','');sv('pt-reason','');sv('pt-notes','');
+  openModal('m-points');
+}
+async function savePoints(){
+  const id=gv('pt-id');const pts=parseInt(gv('pt-pts'))||0;
+  if(pts<=0){alert('Enter a valid number of points');return}
+  const d=DB.distributors.find(x=>x.id===id);if(!d)return;
+  let result;
+  try{result=await api('/distributors/'+id+'/points',{method:'POST',body:JSON.stringify({pts,reason:gv('pt-reason'),notes:gv('pt-notes')})});}catch(e){alert(e.message);return}
+  closeModal('m-points');await loadAll();renderDist();
+  if(result.promoted)toast(`🎉 ${d.name} automatically promoted to Qualified Distributor!`);
+  else toast(`${pts} PV awarded to ${d.name} · Total: ${result.points} PV`);
+}
+function openDetailModal(id){
+  const d=DB.distributors.find(x=>x.id===id);if(!d)return;
+  const sales=distSales(id);
+  const comm=distComm(id);const paid=distPaid(id);const bal=comm-paid;
+  const pts=d.points||0;const pct=Math.min(100,Math.round(pts/500*100));
+  document.getElementById('detail-title').innerHTML=`${d.name} ${tierBadge(d)}`;
+  const tierSection=d.qualified
+    ?`<div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;font-size:13px;color:#1b5e20"><i class="ti ti-rosette-discount-check"></i> <strong>Qualified Distributor</strong> — ${d.qualifiedDate?'Qualified on '+fmtDate(d.qualifiedDate):''} · ${pts} PV total</div>`
+    :`<div style="background:#fff8e1;border:1px solid #ffcc80;border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;font-size:13px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="color:var(--orange);font-weight:600"><i class="ti ti-clock"></i> Unqualified Distributor</span><span style="font-size:12px;color:var(--text2)">${pts} / 500 PV (${500-pts} more needed)</span></div>
+        <div class="tier-progress" style="height:8px"><div class="tier-progress-bar" style="width:${pct}%"></div></div>
+      </div>`;
+  const salesRows=sales.length?[...sales].sort((a,b)=>new Date(b.date)-new Date(a.date)).map(s=>`
+    <div class="sale-row">
+      <div><div style="font-size:13px;font-weight:600">${s.products||'—'}</div><div style="font-size:11px;color:var(--text3)">${fmtDate(s.date)} · Client: ${clientName(s.clientId)}</div></div>
+      <div style="text-align:right"><div style="font-weight:600">${fmtKsh(s.commission)}</div><span class="badge ${s.paid?'badge-paid':'badge-pending'}">${s.paid?'Paid':'Pending'}</span></div>
+    </div>`).join(''):'<p style="color:var(--text3);font-size:13px;padding:8px 0">No sales recorded yet.</p>';
+  const ptsLog=(d.pointsLog||[]).length?[...d.pointsLog].reverse().map(p=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px"><span>${p.reason||'Points awarded'}</span><span style="font-weight:600;color:var(--gold)">+${p.pts} pts · ${fmtDate(p.date)}</span></div>`).join(''):'<p style="color:var(--text3);font-size:13px;padding:6px 0">No points history.</p>';
+  document.getElementById('detail-body').innerHTML=`
+    ${tierSection}
+    <div style="font-size:13px;color:var(--text2);margin-bottom:14px">
+      ${d.phone?`<i class="ti ti-phone"></i> ${d.phone}  `:''}
+      ${d.location?`<i class="ti ti-map-pin"></i> ${d.location}  `:''}
+      <i class="ti ti-calendar"></i> Since ${fmtDate(d.date)}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px">
+      <div class="detail-stat"><div class="v">${sales.length}</div><div class="l">Sales</div></div>
+      <div class="detail-stat"><div class="v" style="font-size:15px">${fmtKsh(comm)}</div><div class="l">Commission</div></div>
+      <div class="detail-stat"><div class="v" style="font-size:15px;color:var(--green)">${fmtKsh(paid)}</div><div class="l">Paid out</div></div>
+      <div class="detail-stat"><div class="v" style="font-size:15px;color:var(--orange)">${fmtKsh(bal)}</div><div class="l">Balance</div></div>
+    </div>
+    <div style="font-weight:700;margin-bottom:8px">Sales history</div>${salesRows}
+    <div style="font-weight:700;margin:14px 0 8px"><i class="ti ti-star"></i> Points history (${d.points||0} total)</div>${ptsLog}`;
+  openModal('m-detail');
+}
+async function manualPromoteDist(id){
+  const d=DB.distributors.find(x=>x.id===id);if(!d)return;
+  if(d.qualified){toast(`${d.name} is already a Qualified Distributor`);return}
+  if(!confirm(`Manually promote ${d.name} to Qualified Distributor?\n(They have ${d.points||0} PV — below the 500 PV threshold)`))return;
+  try{await api('/distributors/'+id+'/qualify',{method:'POST'});}catch(e){alert(e.message);return}
+  await loadAll();renderDist();toast(`${d.name} manually promoted to Qualified Distributor`);
+}
+function renderDist(filterTier='all'){
+  // Auto-qualification (crossing 500 PV) is now handled server-side by a DB trigger.
+  const totComm=DB.distributors.reduce((a,d)=>a+distComm(d.id),0);
+  const totPaid=DB.distributors.reduce((a,d)=>a+distPaid(d.id),0);
+  const totPts=DB.distributors.reduce((a,d)=>a+(d.points||0),0);
+  const qCount=DB.distributors.filter(d=>d.qualified).length;
+  const uCount=DB.distributors.length-qCount;
+  document.getElementById('dist-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">All distributors</div><div class="stat-value">${DB.distributors.length}</div></div>
+    <div class="stat-card" style="--accent:#1b5e20"><div class="stat-label" style="color:#1b5e20">✓ Qualified (500+ PV)</div><div class="stat-value" style="color:#1b5e20">${qCount}</div></div>
+    <div class="stat-card"><div class="stat-label" style="color:var(--orange)">⏳ Unqualified (&lt;500 PV)</div><div class="stat-value" style="color:var(--orange)">${uCount}</div></div>
+    <div class="stat-card"><div class="stat-label">Total commission</div><div class="stat-value" style="font-size:17px">${fmtKsh(totComm)}</div></div>
+    <div class="stat-card"><div class="stat-label">Balance owed</div><div class="stat-value" style="font-size:17px;color:var(--orange)">${fmtKsh(totComm-totPaid)}</div></div>
+    <div class="stat-card"><div class="stat-label">Total PV awarded</div><div class="stat-value">${totPts}</div></div>`;
+  document.getElementById('dist-count').innerHTML=`
+    ${DB.distributors.length} distributor${DB.distributors.length!==1?'s':''}
+    <span style="margin-left:12px;display:inline-flex;gap:4px">
+      <button class="btn btn-xs ${filterTier==='all'?'btn-primary':''}" onclick="renderDist('all')">All</button>
+      <button class="btn btn-xs ${filterTier==='qualified'?'btn-success':''}" onclick="renderDist('qualified')">Qualified</button>
+      <button class="btn btn-xs ${filterTier==='unqualified'?'btn-gold':''}" onclick="renderDist('unqualified')">Unqualified</button>
+    </span>`;
+  const tb=document.getElementById('tb-dist');
+  let list=DB.distributors;
+  if(filterTier==='qualified')list=list.filter(d=>d.qualified);
+  if(filterTier==='unqualified')list=list.filter(d=>!d.qualified);
+  if(!list.length){tb.innerHTML=`<tr><td colspan="11"><div class="empty-state"><i class="ti ti-award"></i><p>No ${filterTier==='all'?'':filterTier} distributors</p><small>${filterTier==='all'?'Promote a student or add one directly':''}</small></div></td></tr>`;return}
+  tb.innerHTML=list.map(d=>{
+    const comm=distComm(d.id);const paid=distPaid(d.id);
+    const pts=d.points||0;const pct=Math.min(100,Math.round(pts/500*100));
+    const pvDisplay=d.qualified
+      ?`<span class="points-badge"><i class="ti ti-star"></i>${pts} PV</span>`
+      :`<div style="min-width:90px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span class="points-badge" style="padding:2px 7px"><i class="ti ti-star"></i>${pts}/500 PV</span><span style="font-size:10px;color:var(--text3)">${pct}%</span></div><div class="tier-progress"><div class="tier-progress-bar" style="width:${pct}%"></div></div></div>`;
+    return`<tr>
+      <td><div class="person-cell"><div class="avatar" style="${d.qualified?'background:#e8f5e9;color:#1b5e20;border-color:#a5d6a7':''}">${initials(d.name)}</div><div class="person-info"><div class="name">${d.name}</div><div class="sub">${d.location||''}</div></div></div></td>
+      <td>${tierBadge(d)}</td>
+      <td>${d.phone||'—'}</td><td>${fmtDate(d.date)}</td>
+      <td style="text-align:center">${distSales(d.id).length}</td>
+      <td style="font-weight:600">${fmtKsh(comm)}</td>
+      <td style="color:var(--green)">${fmtKsh(paid)}</td>
+      <td style="color:var(--orange);font-weight:600">${fmtKsh(comm-paid)}</td>
+      <td>${pvDisplay}</td>
+      <td><div class="actions-cell">
+        <button class="btn btn-xs" onclick="openDetailModal('${d.id}')"><i class="ti ti-eye"></i>View</button>
+        <button class="btn btn-xs btn-gold" onclick="openPointsModal('${d.id}')"><i class="ti ti-star"></i>PV</button>
+        ${!d.qualified?`<button class="btn btn-xs btn-success" title="Manually promote to Qualified" onclick="manualPromoteDist('${d.id}')"><i class="ti ti-rosette-discount-check"></i>Qualify</button>`:''}
+        <button class="btn btn-xs" onclick="editDistModal('${d.id}')"><i class="ti ti-edit"></i></button>
+        <button class="btn btn-xs btn-danger" onclick="deleteDist('${d.id}')"><i class="ti ti-trash"></i></button>
+      </div></td>
+    </tr>`}).join('');
+}
+
+// ========= CLIENTS =========
+async function saveClient(){
+  const name=gv('cl-name').trim();if(!name){alert('Name is required');return}
+  const payload={name,phone:gv('cl-phone'),referredBy:gv('cl-referred')||null,date:gv('cl-date'),products:gv('cl-products'),amount:parseFloat(gv('cl-amount'))||0,location:gv('cl-location'),notes:gv('cl-notes')};
+  try{await api('/clients',{method:'POST',body:JSON.stringify(payload)});}catch(e){alert(e.message);return}
+  closeModal('m-client');['cl-name','cl-phone','cl-products','cl-amount','cl-location','cl-notes'].forEach(id=>sv(id,''));
+  await loadAll();renderClients();toast('Client added');
+}
+async function deleteClient(id){
+  if(!confirm('Delete this client?'))return;
+  try{await api('/clients/'+id,{method:'DELETE'});}catch(e){alert(e.message);return}
+  await loadAll();renderClients();toast('Deleted');
+}
+function renderClients(){
+  document.getElementById('clients-count').textContent=`${DB.clients.length} client${DB.clients.length!==1?'s':''}`;
+  const tb=document.getElementById('tb-clients');
+  if(!DB.clients.length){tb.innerHTML=`<tr><td colspan="8"><div class="empty-state"><i class="ti ti-user-check"></i><p>No clients yet</p><small>Add clients who have purchased medicine</small></div></td></tr>`;return}
+  tb.innerHTML=DB.clients.map(c=>`<tr>
+    <td><div class="person-cell"><div class="avatar">${initials(c.name)}</div><div class="person-info"><div class="name">${c.name}</div></div></div></td>
+    <td>${c.phone||'—'}</td>
+    <td>${c.referredBy?distName(c.referredBy):'<span style="color:var(--text3)">Walk-in</span>'}</td>
+    <td style="font-size:12px;max-width:160px">${c.products||'—'}</td>
+    <td style="font-weight:600">${c.amount?fmtKsh(c.amount):'—'}</td>
+    <td>${fmtDate(c.date)}</td>
+    <td style="font-size:12px;color:var(--text2);max-width:140px">${c.notes||'—'}</td>
+    <td><button class="btn btn-xs btn-danger" onclick="deleteClient('${c.id}')"><i class="ti ti-trash"></i></button></td>
+  </tr>`).join('');
+}
+
+// ========= SALES / COMMISSIONS =========
+function calcComm(){
+  const val=parseFloat(gv('sl-value'))||0;
+  const pct=parseInt(gv('sl-pct'))||10;
+  sv('sl-comm',Math.round(val*pct/100));
+}
+function onPctChange(){
+  const pct=gv('sl-pct');
+  document.getElementById('sl-pct-lbl').textContent=pct+'%';
+  calcComm();
+}
+async function saveSale(){
+  const distId=gv('sl-dist');if(!distId){alert('Please select a distributor');return}
+  const value=parseFloat(gv('sl-value'))||0;if(!value){alert('Please enter a sale value');return}
+  const commission=parseFloat(gv('sl-comm'))||0;
+  const payload={distId,clientId:gv('sl-client')||null,products:gv('sl-products'),date:gv('sl-date'),value,commission,commissionRate:parseFloat(gv('sl-pct'))||10,notes:gv('sl-notes')};
+  try{await api('/sales',{method:'POST',body:JSON.stringify(payload)});}catch(e){alert(e.message);return}
+  closeModal('m-sale');['sl-products','sl-value','sl-comm','sl-notes'].forEach(id=>sv(id,''));
+  await loadAll();renderComm();toast('Sale recorded');
+}
+function openPayModal(id){
+  const s=DB.sales.find(x=>x.id===id);if(!s)return;
+  const d=DB.distributors.find(x=>x.id===s.distId);
+  sv('pay-id',id);sv('pay-date',today());sv('pay-ref','');
+  document.getElementById('pay-info').innerHTML=`<strong>${d?d.name:'Unknown'}</strong><br>Products: ${s.products||'—'}<br>Commission: <strong>${fmtKsh(s.commission)}</strong>`;
+  openModal('m-pay');
+}
+async function markPaid(){
+  const id=gv('pay-id');const s=DB.sales.find(x=>x.id===id);if(!s)return;
+  const payload={date:gv('pay-date'),method:gv('pay-method'),ref:gv('pay-ref')};
+  try{await api('/sales/'+id+'/pay',{method:'POST',body:JSON.stringify(payload)});}catch(e){alert(e.message);return}
+  closeModal('m-pay');await loadAll();renderComm();toast('Commission marked as paid');
+}
+async function deleteSale(id){
+  if(!confirm('Delete this sale record?'))return;
+  try{await api('/sales/'+id,{method:'DELETE'});}catch(e){alert(e.message);return}
+  await loadAll();renderComm();toast('Deleted');
+}
+function renderComm(){
+  const total=DB.sales.reduce((a,s)=>a+(+s.value||0),0);
+  const totComm=DB.sales.reduce((a,s)=>a+(+s.commission||0),0);
+  const paid=DB.sales.filter(s=>s.paid).reduce((a,s)=>a+(+s.commission||0),0);
+  document.getElementById('comm-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Sales recorded</div><div class="stat-value">${DB.sales.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Total sales value</div><div class="stat-value" style="font-size:17px">${fmtKsh(total)}</div></div>
+    <div class="stat-card"><div class="stat-label">Commission earned</div><div class="stat-value" style="font-size:17px">${fmtKsh(totComm)}</div></div>
+    <div class="stat-card"><div class="stat-label">Paid out</div><div class="stat-value" style="font-size:17px;color:var(--green)">${fmtKsh(paid)}</div></div>
+    <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-value" style="font-size:17px;color:var(--orange)">${fmtKsh(totComm-paid)}</div></div>`;
+  document.getElementById('comm-count').textContent=`${DB.sales.length} sale record${DB.sales.length!==1?'s':''}`;
+  const tb=document.getElementById('tb-comm');
+  if(!DB.sales.length){tb.innerHTML=`<tr><td colspan="8"><div class="empty-state"><i class="ti ti-receipt-2"></i><p>No sales recorded yet</p><small>Use the button above to record a sale and commission</small></div></td></tr>`;return}
+  const sorted=[...DB.sales].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  tb.innerHTML=sorted.map(s=>`<tr>
+    <td style="white-space:nowrap">${fmtDate(s.date)}</td>
+    <td>${distName(s.distId)}</td>
+    <td>${s.clientId?clientName(s.clientId):'—'}</td>
+    <td style="font-size:12px;max-width:140px">${s.products||'—'}</td>
+    <td style="font-weight:600">${fmtKsh(s.value)}</td>
+    <td style="font-weight:600;color:var(--red)">${fmtKsh(s.commission)}</td>
+    <td><span class="badge ${s.paid?'badge-paid':'badge-pending'}">${s.paid?`✓ Paid ${s.paidMethod?'· '+s.paidMethod:''}`:'Pending'}</span></td>
+    <td><div class="actions-cell">
+      ${!s.paid?`<button class="btn btn-xs btn-success" onclick="openPayModal('${s.id}')"><i class="ti ti-check"></i>Pay</button>`:`<span style="font-size:11px;color:var(--text3)">${fmtDate(s.paidDate)}</span>`}
+      <button class="btn btn-xs btn-danger" onclick="deleteSale('${s.id}')"><i class="ti ti-trash"></i></button>
+    </div></td>
+  </tr>`).join('');
+}
+
+// ========= RESOURCES =========
+const resIcons={guide:'ti-book',training:'ti-school',price:'ti-tag',form:'ti-file-text',video:'ti-brand-youtube',other:'ti-paperclip'};
+async function saveResource(){
+  const title=gv('r-title').trim();if(!title){alert('Title is required');return}
+  const payload={title,type:gv('r-type'),link:gv('r-link'),desc:gv('r-desc')};
+  try{await api('/resources',{method:'POST',body:JSON.stringify(payload)});}catch(e){alert(e.message);return}
+  closeModal('m-resource');['r-title','r-link','r-desc'].forEach(id=>sv(id,''));
+  await loadAll();renderResources();toast('Resource added');
+}
+async function deleteResource(id){
+  if(!confirm('Delete this resource?'))return;
+  try{await api('/resources/'+id,{method:'DELETE'});}catch(e){alert(e.message);return}
+  await loadAll();renderResources();toast('Deleted');
+}
+function renderResources(){
+  const grid=document.getElementById('resources-grid');
+  if(!DB.resources.length){grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><i class="ti ti-books"></i><p>No resources yet</p><small>Add training materials and documents</small></div>`;return}
+  grid.innerHTML=DB.resources.map(r=>`
+    <div class="res-card">
+      <div class="res-icon"><i class="ti ${resIcons[r.type]||'ti-file'}"></i></div>
+      <div class="res-body">
+        <div class="res-title">${r.title}</div>
+        <div class="res-desc">${r.desc||'No description'}</div>
+        <div class="res-meta">
+          <span class="tag">${r.type}</span>
+          <span style="font-size:11px;color:var(--text3)">${fmtDate(r.date)}</span>
+          ${r.link?`<a href="${r.link}" target="_blank" style="font-size:12px;color:var(--blue)">Open <i class="ti ti-external-link" style="font-size:11px"></i></a>`:''}
+          <button class="btn btn-xs btn-danger" onclick="deleteResource('${r.id}')"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// ========= OVERVIEW =========
+function renderOverview(){
+  const totComm=DB.sales.reduce((a,s)=>a+(+s.commission||0),0);
+  const pending=DB.sales.filter(s=>!s.paid).reduce((a,s)=>a+(+s.commission||0),0);
+  document.getElementById('ov-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Students</div><div class="stat-value">${DB.students.length}</div><div class="stat-sub">Learning the network</div></div>
+    <div class="stat-card"><div class="stat-label">Distributors</div><div class="stat-value">${DB.distributors.length}</div><div class="stat-sub">Active referrers</div></div>
+    <div class="stat-card"><div class="stat-label">Clients</div><div class="stat-value">${DB.clients.length}</div><div class="stat-sub">Medicine buyers</div></div>
+    <div class="stat-card"><div class="stat-label">Total sales</div><div class="stat-value">${DB.sales.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Commission earned</div><div class="stat-value" style="font-size:17px">${fmtKsh(totComm)}</div><div class="stat-sub" style="color:var(--orange)">${fmtKsh(pending)} pending</div></div>`;
+  const recent=[...DB.sales].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,6);
+  document.getElementById('ov-recent').innerHTML=recent.length?recent.map(s=>`
+    <div class="sale-row">
+      <div><div style="font-size:13px;font-weight:600">${distName(s.distId)}</div><div style="font-size:11px;color:var(--text3)">${s.products||'—'} · ${fmtDate(s.date)}</div></div>
+      <div style="text-align:right"><div style="font-weight:600;font-size:13px">${fmtKsh(s.commission)}</div><span class="badge ${s.paid?'badge-paid':'badge-pending'}" style="font-size:10px">${s.paid?'Paid':'Pending'}</span></div>
+    </div>`).join(''):'<p style="padding:12px 0;color:var(--text3);font-size:13px">No commissions recorded yet.</p>';
+  const top=[...DB.distributors].sort((a,b)=>(b.points||0)-(a.points||0)).slice(0,5);
+  document.getElementById('ov-top').innerHTML=top.length?top.map((d,i)=>`
+    <div class="sale-row">
+      <div class="person-cell">
+        <div style="width:24px;height:24px;border-radius:50%;background:${['#f5e6a3','#e8e8e8','#f5dfc0','var(--surface2)','var(--surface2)'][i]};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${['#6e4800','#555','#8a5500','var(--text3)','var(--text3)'][i]};flex-shrink:0">${i+1}</div>
+        <div style="font-size:13px;font-weight:600">${d.name}</div>
+      </div>
+      <span class="points-badge"><i class="ti ti-star"></i>${d.points||0} pts</span>
+    </div>`).join(''):'<p style="padding:12px 0;color:var(--text3);font-size:13px">No distributors yet.</p>';
+}
+
+// ========= SEARCH =========
+function filterTable(tableId,q){
+  q=q.toLowerCase();
+  document.getElementById(tableId).querySelectorAll('tbody tr').forEach(r=>{
+    r.style.display=r.textContent.toLowerCase().includes(q)?'':'none';
+  });
+}
+
+// ========= EXPORT =========
+function exportSheet(type){
+  const wb=XLSX.utils.book_new();
+  let ws,rows;
+  if(type==='students'){
+    rows=[['Name','Phone','Location','Date Joined','Notes'],...DB.students.map(s=>[s.name,s.phone||'',s.location||'',s.date||'',s.notes||''])];
+    ws=XLSX.utils.aoa_to_sheet(rows);XLSX.utils.book_append_sheet(wb,ws,'Students');
+    XLSX.writeFile(wb,'FoHow_Students.xlsx');
+  }else if(type==='distributors'){
+    rows=[['Name','Tier','Phone','Location','Active Since','Total Sales','Commission Earned (KSh)','Paid Out (KSh)','Balance (KSh)','PV / Points','Qualified Date','Notes'],
+      ...DB.distributors.map(d=>[d.name,d.qualified?'Qualified':'Unqualified',d.phone||'',d.location||'',d.date||'',distSales(d.id).length,distComm(d.id),distPaid(d.id),distComm(d.id)-distPaid(d.id),d.points||0,d.qualifiedDate||'',d.notes||''])];
+    ws=XLSX.utils.aoa_to_sheet(rows);XLSX.utils.book_append_sheet(wb,ws,'Distributors');
+    XLSX.writeFile(wb,'FoHow_Distributors.xlsx');
+  }else if(type==='clients'){
+    rows=[['Name','Phone','Referred By','Products','Amount (KSh)','Date','Location','Notes'],
+      ...DB.clients.map(c=>[c.name,c.phone||'',c.referredBy?distName(c.referredBy):'Walk-in',c.products||'',c.amount||0,c.date||'',c.location||'',c.notes||''])];
+    ws=XLSX.utils.aoa_to_sheet(rows);XLSX.utils.book_append_sheet(wb,ws,'Clients');
+    XLSX.writeFile(wb,'FoHow_Clients.xlsx');
+  }else if(type==='commissions'){
+    rows=[['Date','Distributor','Client','Products','Sale Value (KSh)','Commission (KSh)','Status','Paid Date','Payment Method','Ref'],
+      ...DB.sales.map(s=>[s.date||'',distName(s.distId),s.clientId?clientName(s.clientId):'—',s.products||'',s.value||0,s.commission||0,s.paid?'Paid':'Pending',s.paidDate||'',s.paidMethod||'',s.paidRef||''])];
+    ws=XLSX.utils.aoa_to_sheet(rows);XLSX.utils.book_append_sheet(wb,ws,'Commissions');
+    XLSX.writeFile(wb,'FoHow_Commissions.xlsx');
+  }
+  toast('Spreadsheet downloaded');
+}
+
+function exportAll(){
+  const wb=XLSX.utils.book_new();
+  // Students
+  let rows=[['Name','Phone','Location','Date Joined','Notes'],...DB.students.map(s=>[s.name,s.phone||'',s.location||'',s.date||'',s.notes||''])];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Students');
+  // Distributors
+  rows=[['Name','Tier','Phone','Location','Active Since','Sales','Commission (KSh)','Paid (KSh)','Balance (KSh)','PV / Points','Qualified Date','Notes'],
+    ...DB.distributors.map(d=>[d.name,d.qualified?'Qualified':'Unqualified',d.phone||'',d.location||'',d.date||'',distSales(d.id).length,distComm(d.id),distPaid(d.id),distComm(d.id)-distPaid(d.id),d.points||0,d.qualifiedDate||'',d.notes||''])];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Distributors');
+  // Clients
+  rows=[['Name','Phone','Referred By','Products','Amount (KSh)','Date','Location','Notes'],
+    ...DB.clients.map(c=>[c.name,c.phone||'',c.referredBy?distName(c.referredBy):'Walk-in',c.products||'',c.amount||0,c.date||'',c.location||'',c.notes||''])];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Clients');
+  // Sales
+  rows=[['Date','Distributor','Client','Products','Sale Value (KSh)','Commission (KSh)','Status','Paid Date','Method','Ref'],
+    ...DB.sales.map(s=>[s.date||'',distName(s.distId),s.clientId?clientName(s.clientId):'—',s.products||'',s.value||0,s.commission||0,s.paid?'Paid':'Pending',s.paidDate||'',s.paidMethod||'',s.paidRef||''])];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Sales & Commissions');
+  XLSX.writeFile(wb,'FoHow_AllData_'+today()+'.xlsx');
+  toast('All data exported as spreadsheet');
+}
+
+// ========= INIT =========
+(async function init(){
+  try{
+    await loadAll();
+  }catch(e){
+    toast('Could not reach the server — is app.py running?');
+  }
+  renderOverview();
+})();
+</script>
+</body>
+</html>
