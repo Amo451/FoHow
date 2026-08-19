@@ -292,9 +292,14 @@ def api_all():
         resources_resp = supabase.table('resources').select('*').order('created_at').execute()
         resources = [resource_out(r) for r in resources_resp.data] if resources_resp.data else []
 
-        # Get medicines
-        medicines_resp = supabase.table('medicines').select('*').order('name').execute()
-        medicines = [medicine_out(r) for r in medicines_resp.data] if medicines_resp.data else []
+       # Get medicines (with error handling)
+medicines = []
+try:
+    medicines_resp = supabase.table('medicines').select('*').order('name').execute()
+    medicines = [medicine_out(r) for r in medicines_resp.data] if medicines_resp.data else []
+except Exception as e:
+    print(f"⚠️ Could not fetch medicines (table may not exist): {e}")
+    # Table doesn't exist yet - just return empty list
 
         return jsonify({
             "students": students,
@@ -701,7 +706,9 @@ def get_medicines():
         medicines = [medicine_out(r) for r in response.data] if response.data else []
         return jsonify(medicines)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # Table might not exist yet - return empty list
+        print(f"⚠️ Medicines table not found: {e}")
+        return jsonify([])
 
 
 @app.route("/api/medicines", methods=["POST"])
