@@ -495,10 +495,64 @@ tbody tr.clickable-row:active{background:var(--border);transform:scale(0.99)}
     </div>
     <div class="modal-body">
       <div class="form-row">
-        <div class="form-group"><label class="form-label">Distributor <span>*</span></label><select id="sl-dist"><option value="">— select —</option></select></div>
-        <div class="form-group"><label class="form-label">Client</label><select id="sl-client"><option value="">— select client —</option></select></div>
+        <div class="form-group">
+          <label class="form-label">Distributor <span>*</span></label>
+          <select id="sl-dist"><option value="">— select —</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Client</label>
+          <select id="sl-client" onchange="checkNewClient(this)">
+            <option value="">— select client —</option>
+            <option value="__NEW__">➕ Add new client</option>
+          </select>
+          <div id="new-client-fields" style="display:none; margin-top:8px; padding:10px; background:var(--surface2); border-radius:var(--radius); border:1px solid var(--border);">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" style="font-size:10px;">Client Name <span>*</span></label>
+                <input type="text" id="sl-new-client-name" placeholder="e.g. Amina Hassan" style="font-size:12px; height:32px; padding:4px 8px;">
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" style="font-size:10px;">Phone</label>
+                <input type="tel" id="sl-new-client-phone" placeholder="e.g. 0733 000 111" style="font-size:12px; height:32px; padding:4px 8px;">
+              </div>
+              <div class="form-group" style="margin-bottom:0; grid-column:1/-1;">
+                <label class="form-label" style="font-size:10px;">Location</label>
+                <input type="text" id="sl-new-client-location" placeholder="e.g. Nairobi CBD" style="font-size:12px; height:32px; padding:4px 8px;">
+              </div>
+            </div>
+            <div style="font-size:11px; color:var(--text3); margin-top:4px; font-style:italic;">
+              <i class="ti ti-info-circle"></i> New client will be created when you save this sale
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="form-group"><label class="form-label">Products / medicine</label><input type="text" id="sl-products" placeholder="e.g. Shuangdanlian oral liquid × 2"></div>
+
+      <div class="form-group">
+        <label class="form-label">Products / Medicine <span>*</span></label>
+        <div style="display:flex; gap:6px;">
+          <input type="text" id="sl-products" placeholder="e.g. Shuangdanlian oral liquid × 2" style="flex:1;">
+          <button class="btn btn-sm btn-primary" onclick="addMedicineFromSale()" style="white-space:nowrap; min-height:32px; padding:4px 10px; font-size:12px;">
+            <i class="ti ti-pills"></i> Add
+          </button>
+        </div>
+      </div>
+
+      <!-- Medicine List Display -->
+      <div id="sl-medicine-list" style="margin-bottom:10px;"></div>
+
+      <!-- Medicine Points Display -->
+      <div class="form-group" id="sl-points-display" style="display:none; background:var(--gold-light); border:1px solid #e8d08a; border-radius:var(--radius); padding:10px 14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+          <div>
+            <span style="font-weight:600; color:var(--gold-text);"><i class="ti ti-star"></i> Points from medicine:</span>
+            <span id="sl-total-points" style="font-size:18px; font-weight:700; color:var(--gold);">0</span> PV
+          </div>
+          <div style="font-size:11px; color:var(--text2);">
+            Points will be awarded to <span id="sl-distributor-points-name">distributor</span>
+          </div>
+        </div>
+      </div>
+
       <div class="form-row">
         <div class="form-group"><label class="form-label">Date</label><input type="date" id="sl-date"></div>
         <div class="form-group"><label class="form-label">Sale value (KSh) <span>*</span></label><input type="number" id="sl-value" placeholder="e.g. 5000" min="0" oninput="calcComm()"></div>
@@ -519,7 +573,7 @@ tbody tr.clickable-row:active{background:var(--border);transform:scale(0.99)}
     </div>
   </div>
 </div>
-
+  
 <!-- Points Modal -->
 <div class="modal-bg" id="m-points">
   <div class="modal">
@@ -669,8 +723,7 @@ tbody tr.clickable-row:active{background:var(--border);transform:scale(0.99)}
 
 <script>
 // ========= STATE & STORAGE =========
-let DB={students:[],distributors:[],clients:[],sales:[],resources:[]};
-
+let DB={students:[],distributors:[],clients:[],sales:[],resources:[],medicines:[]};
 const API_BASE='/api';
 async function api(path,opts){
   const res=await fetch(API_BASE+path,{headers:{'Content-Type':'application/json'},...opts});
@@ -681,8 +734,12 @@ async function api(path,opts){
 }
 async function loadAll(){
   const data=await api('/all');
-  DB.students=data.students;DB.distributors=data.distributors;
-  DB.clients=data.clients;DB.sales=data.sales;DB.resources=data.resources;
+  DB.students=data.students||[];
+  DB.distributors=data.distributors||[];
+  DB.clients=data.clients||[];
+  DB.sales=data.sales||[];
+  DB.resources=data.resources||[];
+  DB.medicines=data.medicines||[];
 }
 function today(){return new Date().toISOString().slice(0,10)}
 function fmtDate(d){if(!d)return '—';try{return new Date(d+'T00:00:00').toLocaleDateString('en-KE',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return d}}
@@ -727,7 +784,18 @@ function openModal(id){
     'm-student':()=>sv('s-date',today()),
     'm-dist':()=>{sv('d-date',today());populateSel('d-from-student',DB.students,'— select a student —')},
     'm-client':()=>{sv('cl-date',today());populateSel('cl-referred',DB.distributors,'— no referral / walk-in —')},
-    'm-sale':()=>{sv('sl-date',today());populateSel('sl-dist',DB.distributors,'— select distributor —',true);populateSel('sl-client',DB.clients,'— select client —');sv('sl-pct',10);sv('sl-pct-lbl','');document.getElementById('sl-pct-lbl').textContent='10%'},
+   'm-sale':()=>{
+  sv('sl-date',today());
+  populateSel('sl-dist',DB.distributors,'— select distributor —',true);
+  populateSel('sl-client',DB.clients,'— select client —');
+  selectedMedicines = [];
+  renderMedicineList();
+  document.getElementById('new-client-fields').style.display = 'none';
+  ['sl-new-client-name','sl-new-client-phone','sl-new-client-location'].forEach(id=>sv(id,''));
+  sv('sl-pct',10);
+  sv('sl-pct-lbl','');
+  document.getElementById('sl-pct-lbl').textContent='10%'
+},
     'm-pay':()=>sv('pay-date',today()),
   };
   inits[id]?.();
@@ -1056,14 +1124,159 @@ function onPctChange(){
   document.getElementById('sl-pct-lbl').textContent=pct+'%';
   calcComm();
 }
+  // ===== NEW: Medicine Selection & Points =====
+let selectedMedicines = [];
+
+function checkNewClient(select) {
+  const newClientFields = document.getElementById('new-client-fields');
+  if (select.value === '__NEW__') {
+    newClientFields.style.display = 'block';
+  } else {
+    newClientFields.style.display = 'none';
+  }
+}
+
+function addMedicineFromSale() {
+  const input = document.getElementById('sl-products');
+  const medicineName = input.value.trim();
+  if (!medicineName) { toast('Please enter a medicine name'); return; }
+  
+  // Find if medicine exists in DB
+  const existing = DB.medicines.find(m => m.name.toLowerCase() === medicineName.toLowerCase());
+  
+  // If not found, prompt for points
+  let points = existing ? existing.points : 0;
+  if (!existing) {
+    const userPoints = prompt(`Enter point value for "${medicineName}":\n(Points awarded to distributor when sold)`, '25');
+    if (userPoints === null) return;
+    points = parseInt(userPoints) || 0;
+  }
+  
+  // Check if already added
+  if (selectedMedicines.find(m => m.name.toLowerCase() === medicineName.toLowerCase())) {
+    toast('Medicine already added');
+    return;
+  }
+  
+  selectedMedicines.push({ name: medicineName, points: points });
+  input.value = '';
+  renderMedicineList();
+  toast(`Added ${medicineName} (${points} PV)`);
+}
+
+function removeMedicineFromSale(index) {
+  selectedMedicines.splice(index, 1);
+  renderMedicineList();
+}
+
+function renderMedicineList() {
+  const container = document.getElementById('sl-medicine-list');
+  const pointsDisplay = document.getElementById('sl-points-display');
+  const totalPointsEl = document.getElementById('sl-total-points');
+  
+  if (!selectedMedicines.length) {
+    container.innerHTML = '';
+    pointsDisplay.style.display = 'none';
+    return;
+  }
+  
+  const totalPoints = selectedMedicines.reduce((sum, m) => sum + m.points, 0);
+  
+  container.innerHTML = `
+    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;">
+      ${selectedMedicines.map((m, i) => `
+        <span style="background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:4px 10px; font-size:12px; display:inline-flex; align-items:center; gap:6px;">
+          ${m.name}
+          <span style="background:var(--gold-light); color:var(--gold-text); padding:0 6px; border-radius:8px; font-weight:600; font-size:10px;">${m.points} PV</span>
+          <button onclick="removeMedicineFromSale(${i})" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:12px; padding:0 2px;">×</button>
+        </span>
+      `).join('')}
+    </div>
+  `;
+  
+  pointsDisplay.style.display = 'block';
+  totalPointsEl.textContent = totalPoints;
+  
+  // Update distributor name
+  const distId = document.getElementById('sl-dist').value;
+  const distributor = DB.distributors.find(d => d.id === distId);
+  document.getElementById('sl-distributor-points-name').textContent = distributor ? distributor.name : 'distributor';
+}
+
+// Update distributor name when selected
+document.addEventListener('change', function(e) {
+  if (e.target.id === 'sl-dist') {
+    const distributor = DB.distributors.find(d => d.id === e.target.value);
+    document.getElementById('sl-distributor-points-name').textContent = distributor ? distributor.name : 'distributor';
+  }
+});
 async function saveSale(){
-  const distId=gv('sl-dist');if(!distId){alert('Please select a distributor');return}
-  const value=parseFloat(gv('sl-value'))||0;if(!value){alert('Please enter a sale value');return}
-  const commission=parseFloat(gv('sl-comm'))||0;
-  const payload={distId,clientId:gv('sl-client')||null,products:gv('sl-products'),date:gv('sl-date'),value,commission,commissionRate:parseFloat(gv('sl-pct'))||10,notes:gv('sl-notes')};
-  try{await api('/sales',{method:'POST',body:JSON.stringify(payload)});}catch(e){alert(e.message);return}
-  closeModal('m-sale');['sl-products','sl-value','sl-comm','sl-notes'].forEach(id=>sv(id,''));
-  await loadAll();renderComm();toast('Sale recorded');
+  const distId = gv('sl-dist');
+  if(!distId){alert('Please select a distributor');return}
+  
+  const value = parseFloat(gv('sl-value')) || 0;
+  if(!value){alert('Please enter a sale value');return}
+  
+  // Check for new client
+  let clientId = gv('sl-client');
+  if (clientId === '__NEW__') {
+    const name = document.getElementById('sl-new-client-name').value.trim();
+    if (!name) { alert('Please enter the new client name'); return; }
+    
+    try {
+      const result = await api('/clients', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: name,
+          phone: document.getElementById('sl-new-client-phone').value.trim(),
+          location: document.getElementById('sl-new-client-location').value.trim(),
+          date: gv('sl-date'),
+          notes: 'New client added from sale'
+        })
+      });
+      clientId = result.id;
+      toast('New client added');
+    } catch(e) {
+      alert('Error adding new client: ' + e.message);
+      return;
+    }
+  }
+  
+  // Calculate total points from medicines
+  const totalPoints = selectedMedicines.reduce((sum, m) => sum + m.points, 0);
+  const products = selectedMedicines.map(m => m.name).join(', ') || gv('sl-products');
+  
+  const commission = parseFloat(gv('sl-comm')) || 0;
+  const payload = {
+    distId,
+    clientId: clientId || null,
+    products: products,
+    date: gv('sl-date'),
+    value,
+    commission,
+    commissionRate: parseFloat(gv('sl-pct')) || 10,
+    notes: gv('sl-notes'),
+    points: totalPoints
+  };
+  
+  try {
+    await api('/sales', { method: 'POST', body: JSON.stringify(payload) });
+  } catch(e) {
+    alert(e.message);
+    return;
+  }
+  
+  closeModal('m-sale');
+  ['sl-products','sl-value','sl-comm','sl-notes'].forEach(id=>sv(id,''));
+  selectedMedicines = [];
+  renderMedicineList();
+  document.getElementById('sl-client').value = '';
+  document.getElementById('new-client-fields').style.display = 'none';
+  ['sl-new-client-name','sl-new-client-phone','sl-new-client-location'].forEach(id=>sv(id,''));
+  
+  await loadAll();
+  renderComm();
+  toast('Sale recorded with ' + totalPoints + ' PV points awarded');
 }
 function openPayModal(id){
   const s=DB.sales.find(x=>x.id===id);if(!s)return;
