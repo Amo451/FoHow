@@ -892,10 +892,36 @@ function openTransactionDetail(saleId) {
 }
 document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));
 
-function populateSel(selId,arr,placeholder,required=false){
-  const sel=document.getElementById(selId);if(!sel)return;
-  sel.innerHTML=`<option value="">${placeholder}</option>`;
-  arr.forEach(x=>sel.add(new Option(x.name,x.id)));
+function populateSel(selId, arr, placeholder, required = false) {
+  const sel = document.getElementById(selId);
+  if (!sel) return;
+  
+  // Clear existing options
+  sel.innerHTML = '';
+  
+  // Add placeholder option
+  const placeholderOption = document.createElement('option');
+  placeholderOption.value = '';
+  placeholderOption.textContent = placeholder;
+  sel.appendChild(placeholderOption);
+  
+  // Add "Add new client" option ONLY for the client dropdown
+  if (selId === 'sl-client') {
+    const newOption = document.createElement('option');
+    newOption.value = '__NEW__';
+    newOption.textContent = '➕ Add new client';
+    newOption.style.color = 'var(--red)';
+    newOption.style.fontWeight = 'bold';
+    sel.appendChild(newOption);
+  }
+  
+  // Add existing items
+  arr.forEach(x => {
+    const option = document.createElement('option');
+    option.value = x.id;
+    option.textContent = x.name;
+    sel.appendChild(option);
+  });
 }
 
 // ========= STUDENTS =========
@@ -1129,13 +1155,29 @@ let selectedMedicines = [];
 
 function checkNewClient(select) {
   const newClientFields = document.getElementById('new-client-fields');
+  if (!newClientFields) {
+    console.error('new-client-fields element not found');
+    return;
+  }
+  
   if (select.value === '__NEW__') {
     newClientFields.style.display = 'block';
+    // Focus the name field for convenience
+    setTimeout(() => {
+      const nameField = document.getElementById('sl-new-client-name');
+      if (nameField) nameField.focus();
+    }, 100);
   } else {
     newClientFields.style.display = 'none';
+    // Clear the fields when hiding
+    const nameField = document.getElementById('sl-new-client-name');
+    const phoneField = document.getElementById('sl-new-client-phone');
+    const locationField = document.getElementById('sl-new-client-location');
+    if (nameField) nameField.value = '';
+    if (phoneField) phoneField.value = '';
+    if (locationField) locationField.value = '';
   }
 }
-
 function addMedicineFromSale() {
   const input = document.getElementById('sl-products');
   const medicineName = input.value.trim();
