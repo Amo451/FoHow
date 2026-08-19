@@ -85,10 +85,8 @@ if not os.path.exists(static_folder):
 def uid(prefix):
     return f"{prefix}_{uuid.uuid4().hex[:10]}"
 
-
 def today():
     return datetime.date.today().isoformat()
-
 
 def row_to_dict(data):
     """Convert Supabase response to dict"""
@@ -96,17 +94,14 @@ def row_to_dict(data):
         return [dict(item) for item in data] if data else []
     return dict(data) if data else {}
 
-
 # ---------------------------------------------------------------------
 # Serializers: DB column names -> the field names the front-end JS expects
-# (keeps the existing index.html render logic untouched)
 # ---------------------------------------------------------------------
 def student_out(r):
     return {
         "id": r["id"], "name": r["name"], "phone": r.get("phone", ""),
         "location": r.get("location", ""), "date": r.get("date_joined", ""), "notes": r.get("notes", ""),
     }
-
 
 def distributor_out(r, points_log_map):
     return {
@@ -117,7 +112,6 @@ def distributor_out(r, points_log_map):
         "pointsLog": points_log_map.get(r["id"], []),
     }
 
-
 def client_out(r):
     return {
         "id": r["id"], "name": r["name"], "phone": r.get("phone", ""),
@@ -125,7 +119,6 @@ def client_out(r):
         "products": r.get("products", ""), "amount": r.get("amount", 0),
         "location": r.get("location", ""), "notes": r.get("notes", ""),
     }
-
 
 def sale_out(r):
     return {
@@ -136,12 +129,12 @@ def sale_out(r):
         "paidDate": r.get("paid_date", ""), "paidMethod": r.get("paid_method", ""), "paidRef": r.get("paid_ref", ""),
     }
 
-
 def resource_out(r):
     return {
         "id": r["id"], "title": r["title"], "type": r.get("type", "other"), 
         "link": r.get("link", ""), "desc": r.get("description", ""), "date": r.get("date_added", ""),
     }
+
 def medicine_out(r):
     return {
         "id": r["id"], 
@@ -157,7 +150,6 @@ def medicine_out(r):
 # ---------------------------------------------------------------------
 PUBLIC_PATHS = {"/login", "/favicon.ico", "/api/health"}
 
-
 @app.before_request
 def require_login():
     # Skip auth for public paths
@@ -165,16 +157,12 @@ def require_login():
         return
     if request.path.startswith("/static/"):
         return
-    
-    # Skip auth for health check
     if request.path.startswith("/api/health"):
         return
-    
     if not session.get("logged_in"):
         if request.path.startswith("/api/"):
             return jsonify({"error": "Not authenticated"}), 401
         return redirect(url_for("login"))
-
 
 LOGIN_PAGE = """<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
@@ -217,7 +205,6 @@ button:hover{background:#6e1515}
 </form>
 </body></html>"""
 
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
     error_html = ""
@@ -232,12 +219,10 @@ def login():
         error_html = '<div class="err">Incorrect username or password</div>'
     return LOGIN_PAGE.replace("{{ERROR}}", error_html)
 
-
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("login"))
-
 
 # ---------------------------------------------------------------------
 # Static UI
@@ -246,12 +231,9 @@ def logout():
 def index():
     return send_from_directory(app.static_folder, "index.html")
 
-
-# Serve static files
 @app.route("/static/<path:path>")
 def serve_static(path):
     return send_from_directory(app.static_folder, path)
-
 
 # ---------------------------------------------------------------------
 # Combined read: everything the UI needs on load / after any mutation
@@ -288,18 +270,17 @@ def api_all():
         sales_resp = supabase.table('sales').select('*').order('created_at').execute()
         sales = [sale_out(r) for r in sales_resp.data] if sales_resp.data else []
 
-                # Get resources
+        # Get resources
         resources_resp = supabase.table('resources').select('*').order('created_at').execute()
         resources = [resource_out(r) for r in resources_resp.data] if resources_resp.data else []
 
-       # Get medicines (with error handling)
-medicines = []
-try:
-    medicines_resp = supabase.table('medicines').select('*').order('name').execute()
-    medicines = [medicine_out(r) for r in medicines_resp.data] if medicines_resp.data else []
-except Exception as e:
-    print(f"⚠️ Could not fetch medicines (table may not exist): {e}")
-    # Table doesn't exist yet - just return empty list
+        # Get medicines (with error handling)
+        medicines = []
+        try:
+            medicines_resp = supabase.table('medicines').select('*').order('name').execute()
+            medicines = [medicine_out(r) for r in medicines_resp.data] if medicines_resp.data else []
+        except Exception as e:
+            print(f"⚠️ Could not fetch medicines (table may not exist): {e}")
 
         return jsonify({
             "students": students,
@@ -313,7 +294,6 @@ except Exception as e:
         print(f"Error in /api/all: {e}")
         return jsonify({"error": str(e)}), 500
 
-
 # ---------------------------------------------------------------------
 # STUDENTS
 # ---------------------------------------------------------------------
@@ -321,12 +301,10 @@ except Exception as e:
 def create_student():
     if supabase is None:
         return jsonify({"error": "Supabase client not initialized"}), 500
-    
     try:
         d = request.get_json(force=True)
         if not d.get("name", "").strip():
             return jsonify({"error": "Name is required"}), 400
-        
         sid = uid("s")
         data = {
             "id": sid,
@@ -341,12 +319,10 @@ def create_student():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-
 @app.route("/api/students/<sid>", methods=["PUT"])
 def update_student(sid):
     if supabase is None:
         return jsonify({"error": "Supabase client not initialized"}), 500
-    
     try:
         d = request.get_json(force=True)
         data = {
@@ -361,34 +337,26 @@ def update_student(sid):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-
 @app.route("/api/students/<sid>", methods=["DELETE"])
 def delete_student(sid):
     if supabase is None:
         return jsonify({"error": "Supabase client not initialized"}), 500
-    
     try:
         supabase.table('students').delete().eq('id', sid).execute()
         return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-
 @app.route("/api/students/<sid>/promote", methods=["POST"])
 def promote_student(sid):
     if supabase is None:
         return jsonify({"error": "Supabase client not initialized"}), 500
-    
     try:
-        # Get student
         student_resp = supabase.table('students').select('*').eq('id', sid).execute()
         if not student_resp.data:
             return jsonify({"error": "Student not found"}), 404
-        
         s = student_resp.data[0]
         did = uid("d")
-        
-        # Create distributor
         dist_data = {
             "id": did,
             "name": s["name"],
@@ -399,14 +367,10 @@ def promote_student(sid):
             "promoted_from_student_id": sid,
         }
         supabase.table('distributors').insert(dist_data).execute()
-        
-        # Delete student
         supabase.table('students').delete().eq('id', sid).execute()
-        
         return jsonify({"id": did}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-
 
 # ---------------------------------------------------------------------
 # DISTRIBUTORS
@@ -415,15 +379,12 @@ def promote_student(sid):
 def create_distributor():
     if supabase is None:
         return jsonify({"error": "Supabase client not initialized"}), 500
-    
     try:
         d = request.get_json(force=True)
         if not d.get("name", "").strip():
             return jsonify({"error": "Name is required"}), 400
-        
         did = uid("d")
         from_student_id = d.get("fromStudentId") or None
-        
         data = {
             "id": did,
             "name": d["name"].strip(),
@@ -434,20 +395,16 @@ def create_distributor():
             "promoted_from_student_id": from_student_id,
         }
         supabase.table('distributors').insert(data).execute()
-        
         if from_student_id:
             supabase.table('students').delete().eq('id', from_student_id).execute()
-        
         return jsonify({"id": did}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-
 
 @app.route("/api/distributors/<did>", methods=["PUT"])
 def update_distributor(did):
     if supabase is None:
         return jsonify({"error": "Supabase client not initialized"}), 500
-    
     try:
         d = request.get_json(force=True)
         data = {
@@ -462,38 +419,29 @@ def update_distributor(did):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-
 @app.route("/api/distributors/<did>", methods=["DELETE"])
 def delete_distributor(did):
     if supabase is None:
         return jsonify({"error": "Supabase client not initialized"}), 500
-    
     try:
         supabase.table('distributors').delete().eq('id', did).execute()
         return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-
 @app.route("/api/distributors/<did>/points", methods=["POST"])
 def award_points(did):
     if supabase is None:
         return jsonify({"error": "Supabase client not initialized"}), 500
-    
     try:
         d = request.get_json(force=True)
         pts = int(d.get("pts") or 0)
         if pts <= 0:
             return jsonify({"error": "Enter a valid number of points"}), 400
-        
-        # Check if distributor exists and get current qualified status
         dist_resp = supabase.table('distributors').select('qualified').eq('id', did).execute()
         if not dist_resp.data:
             return jsonify({"error": "Distributor not found"}), 404
-        
         was_qualified = bool(dist_resp.data[0].get("qualified", False))
-        
-        # Insert points (trigger will auto-add to points and qualify if >= 500)
         log_data = {
             "distributor_id": did,
             "points": pts,
@@ -502,32 +450,23 @@ def award_points(did):
             "log_date": today(),
         }
         supabase.table('points_log').insert(log_data).execute()
-        
-        # Get updated distributor info
         updated_resp = supabase.table('distributors').select('points, qualified').eq('id', did).execute()
         after = updated_resp.data[0]
         promoted = (not was_qualified) and bool(after.get("qualified", False))
-        
         return jsonify({"ok": True, "points": after.get("points", 0), "promoted": promoted}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-
 
 @app.route("/api/distributors/<did>/qualify", methods=["POST"])
 def manual_qualify(did):
     if supabase is None:
         return jsonify({"error": "Supabase client not initialized"}), 500
-    
     try:
-        data = {
-            "qualified": 1,
-            "qualified_date": today()
-        }
+        data = {"qualified": 1, "qualified_date": today()}
         supabase.table('distributors').update(data).eq('id', did).eq('qualified', 0).execute()
         return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-
 
 # ---------------------------------------------------------------------
 # CLIENTS
@@ -536,12 +475,10 @@ def manual_qualify(did):
 def create_client():
     if supabase is None:
         return jsonify({"error": "Supabase client not initialized"}), 500
-    
     try:
         d = request.get_json(force=True)
         if not d.get("name", "").strip():
             return jsonify({"error": "Name is required"}), 400
-        
         cid = uid("cl")
         data = {
             "id": cid,
@@ -559,18 +496,15 @@ def create_client():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-
 @app.route("/api/clients/<cid>", methods=["DELETE"])
 def delete_client(cid):
     if supabase is None:
         return jsonify({"error": "Supabase client not initialized"}), 500
-    
     try:
         supabase.table('clients').delete().eq('id', cid).execute()
         return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-
 
 # ---------------------------------------------------------------------
 # SALES / COMMISSIONS
@@ -579,12 +513,11 @@ def delete_client(cid):
 def create_sale():
     if supabase is None:
         return jsonify({"error": "Supabase client not initialized"}), 500
-    
     try:
         d = request.get_json(force=True)
         dist_id = d.get("distId")
         value = float(d.get("value") or 0)
-        points = int(d.get("points") or 0)  # NEW: Get points from request
+        points = int(d.get("points") or 0)
         
         if not dist_id:
             return jsonify({"error": "Please select a distributor"}), 400
@@ -606,7 +539,6 @@ def create_sale():
         }
         supabase.table('sales').insert(data).execute()
         
-        # NEW: Award points to distributor if any
         if points > 0:
             log_data = {
                 "distributor_id": dist_id,
@@ -622,24 +554,20 @@ def create_sale():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-
 @app.route("/api/sales/<sid>", methods=["DELETE"])
 def delete_sale(sid):
     if supabase is None:
         return jsonify({"error": "Supabase client not initialized"}), 500
-    
     try:
         supabase.table('sales').delete().eq('id', sid).execute()
         return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-
 @app.route("/api/sales/<sid>/pay", methods=["POST"])
 def pay_sale(sid):
     if supabase is None:
         return jsonify({"error": "Supabase client not initialized"}), 500
-    
     try:
         d = request.get_json(force=True)
         data = {
@@ -653,7 +581,6 @@ def pay_sale(sid):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-
 # ---------------------------------------------------------------------
 # RESOURCES
 # ---------------------------------------------------------------------
@@ -661,12 +588,10 @@ def pay_sale(sid):
 def create_resource():
     if supabase is None:
         return jsonify({"error": "Supabase client not initialized"}), 500
-    
     try:
         d = request.get_json(force=True)
         if not d.get("title", "").strip():
             return jsonify({"error": "Title is required"}), 400
-        
         rid = uid("r")
         data = {
             "id": rid,
@@ -681,12 +606,10 @@ def create_resource():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-
 @app.route("/api/resources/<rid>", methods=["DELETE"])
 def delete_resource(rid):
     if supabase is None:
         return jsonify({"error": "Supabase client not initialized"}), 500
-    
     try:
         supabase.table('resources').delete().eq('id', rid).execute()
         return jsonify({"ok": True})
@@ -700,27 +623,22 @@ def delete_resource(rid):
 def get_medicines():
     if supabase is None:
         return jsonify({"error": "Supabase client not initialized"}), 500
-    
     try:
         response = supabase.table('medicines').select('*').order('name').execute()
         medicines = [medicine_out(r) for r in response.data] if response.data else []
         return jsonify(medicines)
     except Exception as e:
-        # Table might not exist yet - return empty list
         print(f"⚠️ Medicines table not found: {e}")
         return jsonify([])
-
 
 @app.route("/api/medicines", methods=["POST"])
 def create_medicine():
     if supabase is None:
         return jsonify({"error": "Supabase client not initialized"}), 500
-    
     try:
         d = request.get_json(force=True)
         if not d.get("name", "").strip():
             return jsonify({"error": "Name is required"}), 400
-        
         mid = uid("m")
         data = {
             "id": mid,
@@ -735,12 +653,10 @@ def create_medicine():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-
 @app.route("/api/medicines/<mid>", methods=["PUT"])
 def update_medicine(mid):
     if supabase is None:
         return jsonify({"error": "Supabase client not initialized"}), 500
-    
     try:
         d = request.get_json(force=True)
         data = {
@@ -754,12 +670,10 @@ def update_medicine(mid):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-
 @app.route("/api/medicines/<mid>", methods=["DELETE"])
 def delete_medicine(mid):
     if supabase is None:
         return jsonify({"error": "Supabase client not initialized"}), 500
-    
     try:
         supabase.table('medicines').delete().eq('id', mid).execute()
         return jsonify({"ok": True})
@@ -778,9 +692,7 @@ def health():
             "connected": False,
             "error": "Supabase client not initialized"
         }), 500
-    
     try:
-        # Test Supabase connection
         supabase.table('students').select('id').limit(1).execute()
         return jsonify({
             "status": "healthy",
@@ -796,7 +708,6 @@ def health():
             "error": str(e)
         }), 500
 
-
 # ---------------------------------------------------------------------
 # Root path for Vercel compatibility
 # ---------------------------------------------------------------------
@@ -808,9 +719,7 @@ def vercel_info():
         "message": "FoHow Natural Solutions API is live!"
     })
 
-
 # For Vercel - the app object is the WSGI application
-# This is what Vercel looks for
 application = app
 
 if __name__ == "__main__":
