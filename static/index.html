@@ -139,8 +139,82 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 .detail-stat{background:var(--surface2);border-radius:var(--radius);padding:12px 14px;text-align:center}
 .detail-stat .v{font-size:20px;font-weight:700}
 .detail-stat .l{font-size:11px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:0.5px}
-@media(max-width:600px){.form-row{grid-template-columns:1fr}.hdr-actions{width:100%}.stats-row{grid-template-columns:1fr 1fr}}
-  footer{margin-top:auto}
+@media(max-width:600px){.form-row{grid-template-columns:1fr}.hdr-actions{width:100%}.stats-row{grid-template-columns:1fr 1fr}.transaction-detail-grid{grid-template-columns:1fr}}
+footer{margin-top:auto}
+
+/* ===== NEW: Clickable row styling ===== */
+tbody tr.clickable-row{transition:background 0.15s}
+tbody tr.clickable-row:hover{background:var(--surface2);cursor:pointer}
+tbody tr.clickable-row:active{background:var(--border);transform:scale(0.99)}
+
+/* ===== NEW: Transaction Detail Modal ===== */
+.transaction-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 8px;
+}
+.transaction-detail-item {
+  background: var(--surface2);
+  padding: 10px 12px;
+  border-radius: var(--radius);
+}
+.transaction-detail-item .label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text3);
+  font-weight: 600;
+}
+.transaction-detail-item .value {
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 2px;
+  color: var(--text);
+  word-break: break-all;
+}
+.transaction-detail-item .value.mpesa {
+  color: var(--green);
+  font-family: monospace;
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+.transaction-detail-item .value.bank-ref {
+  color: var(--blue);
+  font-family: monospace;
+  font-size: 15px;
+}
+.payment-details-box {
+  background: var(--green-light);
+  border: 1px solid #a5d6a7;
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-top: 10px;
+}
+.payment-details-box .title {
+  font-weight: 600;
+  color: var(--green-text);
+  margin-bottom: 6px;
+}
+.payment-details-box .title i { margin-right: 6px; }
+.pending-box {
+  background: var(--orange-light);
+  border: 1px solid #ffcc80;
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-top: 10px;
+}
+.pending-box .title {
+  font-weight: 600;
+  color: var(--orange-text);
+}
+.pending-box .title i { margin-right: 6px; }
+.pending-box .sub { font-size: 12px; color: var(--text2); margin-top: 4px; }
+
+@media (max-width: 768px) {
+  .transaction-detail-grid { grid-template-columns: 1fr; }
+}
+</style>
 </style>
 </head>
 <body>
@@ -575,7 +649,22 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
     <div class="modal-footer"><button class="btn" onclick="closeModal('m-edit-dist')">Cancel</button><button class="btn btn-primary" onclick="updateDist()">Save changes</button></div>
   </div>
 </div>
-
+<!-- ===== NEW: Transaction Detail Modal ===== -->
+<div class="modal-bg" id="m-transaction-detail">
+  <div class="modal" style="width:min(560px,100%)">
+    <div class="modal-hdr">
+      <div class="modal-title"><i class="ti ti-receipt-2"></i> Transaction Details</div>
+      <button class="modal-close" onclick="closeModal('m-transaction-detail')">×</button>
+    </div>
+    <div class="modal-body" id="transaction-detail-body">
+      <!-- Dynamically populated -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="window.print()"><i class="ti ti-printer"></i> Print</button>
+      <button class="btn" onclick="closeModal('m-transaction-detail')">Close</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"><i class="ti ti-check"></i><span id="toast-msg"></span></div>
 
 <script>
@@ -644,6 +733,95 @@ function openModal(id){
   inits[id]?.();
 }
 function closeModal(id){document.getElementById(id).classList.remove('open')}
+  // ========= NEW: TRANSACTION DETAIL =========
+function openTransactionDetail(saleId) {
+  const sale = DB.sales.find(x => x.id === saleId);
+  if (!sale) { toast('Transaction not found'); return; }
+  
+  const distributor = DB.distributors.find(d => d.id === sale.distId);
+  const client = DB.clients.find(c => c.id === sale.clientId);
+  
+  const body = document.getElementById('transaction-detail-body');
+  body.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+      <div>
+        <div style="font-size:12px; color:var(--text3);">Transaction ID</div>
+        <div style="font-size:13px; font-weight:600; font-family:monospace;">${sale.id}</div>
+      </div>
+      <span class="badge ${sale.paid ? 'badge-paid' : 'badge-pending'}">
+        ${sale.paid ? '<i class="ti ti-check-circle"></i> Paid' : '<i class="ti ti-clock"></i> Pending'}
+      </span>
+    </div>
+    
+    <div style="border-top:1px solid var(--border); padding-top:12px; margin-top:4px;">
+      <div class="transaction-detail-grid">
+        <div class="transaction-detail-item">
+          <div class="label"><i class="ti ti-user"></i> Distributor</div>
+          <div class="value">${distributor ? distributor.name : '—'}</div>
+        </div>
+        <div class="transaction-detail-item">
+          <div class="label"><i class="ti ti-user-check"></i> Client</div>
+          <div class="value">${client ? client.name : 'Walk-in'}</div>
+        </div>
+        <div class="transaction-detail-item">
+          <div class="label"><i class="ti ti-calendar"></i> Date</div>
+          <div class="value">${fmtDate(sale.date)}</div>
+        </div>
+        <div class="transaction-detail-item">
+          <div class="label"><i class="ti ti-coin"></i> Sale Value</div>
+          <div class="value">${fmtKsh(sale.value)}</div>
+        </div>
+        <div class="transaction-detail-item">
+          <div class="label"><i class="ti ti-percent"></i> Commission Rate</div>
+          <div class="value">${sale.commissionRate || 10}%</div>
+        </div>
+        <div class="transaction-detail-item">
+          <div class="label"><i class="ti ti-coins"></i> Commission</div>
+          <div class="value" style="color:var(--red);">${fmtKsh(sale.commission)}</div>
+        </div>
+        <div class="transaction-detail-item" style="grid-column: 1 / -1;">
+          <div class="label"><i class="ti ti-package"></i> Products / Medicine</div>
+          <div class="value" style="font-size:13px;">${sale.products || '—'}</div>
+        </div>
+        ${sale.notes ? `
+        <div class="transaction-detail-item" style="grid-column: 1 / -1;">
+          <div class="label"><i class="ti ti-notes"></i> Notes</div>
+          <div class="value" style="font-size:13px; font-weight:400;">${sale.notes}</div>
+        </div>` : ''}
+      </div>
+    </div>
+    
+    ${sale.paid ? `
+    <div class="payment-details-box">
+      <div class="title"><i class="ti ti-check-circle"></i> Payment Details</div>
+      <div class="transaction-detail-grid" style="margin-top:4px;">
+        <div class="transaction-detail-item" style="background:transparent; padding:4px 0;">
+          <div class="label">Payment Date</div>
+          <div class="value" style="font-size:13px;">${fmtDate(sale.paidDate)}</div>
+        </div>
+        <div class="transaction-detail-item" style="background:transparent; padding:4px 0;">
+          <div class="label">Method</div>
+          <div class="value" style="font-size:13px;">${sale.paidMethod || '—'}</div>
+        </div>
+        ${sale.paidRef ? `
+        <div class="transaction-detail-item" style="grid-column: 1 / -1; background:transparent; padding:4px 0;">
+          <div class="label">${sale.paidMethod === 'M-Pesa' ? 'M-Pesa Code' : 'Reference / Bank Code'}</div>
+          <div class="value ${sale.paidMethod === 'M-Pesa' ? 'mpesa' : 'bank-ref'}" style="font-size:15px;">
+            <i class="ti ${sale.paidMethod === 'M-Pesa' ? 'ti-device-mobile' : 'ti-building-bank'}"></i> ${sale.paidRef}
+          </div>
+        </div>` : ''}
+      </div>
+    </div>
+    ` : `
+    <div class="pending-box">
+      <div class="title"><i class="ti ti-clock"></i> Payment Pending</div>
+      <div class="sub">This transaction has not been paid yet. Use the "Pay" button to mark as paid.</div>
+    </div>
+    `}
+  `;
+  
+  openModal('m-transaction-detail');
+}
 document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));
 
 function populateSel(selId,arr,placeholder,required=false){
@@ -919,19 +1097,21 @@ function renderComm(){
   const tb=document.getElementById('tb-comm');
   if(!DB.sales.length){tb.innerHTML=`<tr><td colspan="8"><div class="empty-state"><i class="ti ti-receipt-2"></i><p>No sales recorded yet</p><small>Use the button above to record a sale and commission</small></div></td></tr>`;return}
   const sorted=[...DB.sales].sort((a,b)=>new Date(b.date)-new Date(a.date));
-  tb.innerHTML=sorted.map(s=>`<tr>
-    <td style="white-space:nowrap">${fmtDate(s.date)}</td>
-    <td>${distName(s.distId)}</td>
-    <td>${s.clientId?clientName(s.clientId):'—'}</td>
-    <td style="font-size:12px;max-width:140px">${s.products||'—'}</td>
-    <td style="font-weight:600">${fmtKsh(s.value)}</td>
-    <td style="font-weight:600;color:var(--red)">${fmtKsh(s.commission)}</td>
-    <td><span class="badge ${s.paid?'badge-paid':'badge-pending'}">${s.paid?`✓ Paid ${s.paidMethod?'· '+s.paidMethod:''}`:'Pending'}</span></td>
-    <td><div class="actions-cell">
-      ${!s.paid?`<button class="btn btn-xs btn-success" onclick="openPayModal('${s.id}')"><i class="ti ti-check"></i>Pay</button>`:`<span style="font-size:11px;color:var(--text3)">${fmtDate(s.paidDate)}</span>`}
-      <button class="btn btn-xs btn-danger" onclick="deleteSale('${s.id}')"><i class="ti ti-trash"></i></button>
-    </div></td>
-  </tr>`).join('');
+  tb.innerHTML=sorted.map(s=>`
+    <tr class="clickable-row" onclick="openTransactionDetail('${s.id}')" title="Click to view full transaction details">
+      <td style="white-space:nowrap">${fmtDate(s.date)}</td>
+      <td>${distName(s.distId)}</td>
+      <td>${s.clientId?clientName(s.clientId):'—'}</td>
+      <td style="font-size:12px;max-width:140px">${s.products||'—'}</td>
+      <td style="font-weight:600">${fmtKsh(s.value)}</td>
+      <td style="font-weight:600;color:var(--red)">${fmtKsh(s.commission)}</td>
+      <td><span class="badge ${s.paid?'badge-paid':'badge-pending'}">${s.paid?`✓ Paid${s.paidMethod?' · '+s.paidMethod:''}`:'Pending'}</span></td>
+      <td><div class="actions-cell" onclick="event.stopPropagation();">
+        ${!s.paid?`<button class="btn btn-xs btn-success" onclick="openPayModal('${s.id}')"><i class="ti ti-check"></i>Pay</button>`:`<span style="font-size:11px;color:var(--text3)">${fmtDate(s.paidDate)}</span>`}
+        <button class="btn btn-xs" onclick="openTransactionDetail('${s.id}')"><i class="ti ti-eye"></i></button>
+        <button class="btn btn-xs btn-danger" onclick="deleteSale('${s.id}')"><i class="ti ti-trash"></i></button>
+      </div></td>
+    </tr>`).join('');
 }
 
 // ========= RESOURCES =========
