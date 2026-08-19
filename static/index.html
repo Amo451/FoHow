@@ -147,6 +147,11 @@ tbody tr.clickable-row{transition:background 0.15s}
 tbody tr.clickable-row:hover{background:var(--surface2);cursor:pointer}
 tbody tr.clickable-row:active{background:var(--border);transform:scale(0.99)}
 
+  /* ===== NEW: Clickable client rows ===== */
+tbody tr.client-clickable-row{transition:background 0.15s}
+tbody tr.client-clickable-row:hover{background:var(--surface2);cursor:pointer}
+tbody tr.client-clickable-row:active{background:var(--border);transform:scale(0.99)}
+
 /* ===== NEW: Transaction Detail Modal ===== */
 .transaction-detail-grid {
   display: grid;
@@ -719,6 +724,22 @@ tbody tr.clickable-row:active{background:var(--border);transform:scale(0.99)}
     </div>
   </div>
 </div>
+  <!-- ===== NEW: Client Detail Modal ===== -->
+<div class="modal-bg" id="m-client-detail">
+  <div class="modal" style="width:min(560px,100%)">
+    <div class="modal-hdr">
+      <div class="modal-title"><i class="ti ti-user-circle"></i> Client Details</div>
+      <button class="modal-close" onclick="closeModal('m-client-detail')">×</button>
+    </div>
+    <div class="modal-body" id="client-detail-body">
+      <!-- Dynamically populated -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="window.print()"><i class="ti ti-printer"></i> Print</button>
+      <button class="btn" onclick="closeModal('m-client-detail')">Close</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"><i class="ti ti-check"></i><span id="toast-msg"></span></div>
 
 <script>
@@ -888,8 +909,115 @@ function openTransactionDetail(saleId) {
     `}
   `;
   
-  openModal('m-transaction-detail');
+   openModal('m-transaction-detail');
 }
+
+// ========= NEW: CLIENT DETAIL =========
+function openClientDetail(clientId) {
+  const client = DB.clients.find(x => x.id === clientId);
+  if (!client) { toast('Client not found'); return; }
+  
+  // Find who referred this client
+  const referrer = client.referredBy ? DB.distributors.find(d => d.id === client.referredBy) : null;
+  
+  // Get client's purchase history (sales)
+  const purchases = DB.sales.filter(s => s.clientId === clientId);
+  const totalSpent = purchases.reduce((sum, s) => sum + (s.value || 0), 0);
+  const totalCommission = purchases.reduce((sum, s) => sum + (s.commission || 0), 0);
+  
+  const body = document.getElementById('client-detail-body');
+  body.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+      <div>
+        <div style="font-size:20px; font-weight:700; color:var(--text);">${client.name}</div>
+        <div style="font-size:13px; color:var(--text2);">${client.phone || 'No phone provided'}</div>
+      </div>
+      <span class="badge badge-student" style="font-size:12px; padding:4px 12px;">
+        <i class="ti ti-user-check"></i> Client
+      </span>
+    </div>
+    
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:16px;">
+      <div class="detail-stat">
+        <div class="v">${purchases.length}</div>
+        <div class="l">Total Purchases</div>
+      </div>
+      <div class="detail-stat">
+        <div class="v" style="font-size:16px;">${fmtKsh(totalSpent)}</div>
+        <div class="l">Total Spent</div>
+      </div>
+      <div class="detail-stat">
+        <div class="v" style="font-size:16px; color:var(--red);">${fmtKsh(totalCommission)}</div>
+        <div class="l">Commission Generated</div>
+      </div>
+    </div>
+    
+    <div style="border-top:1px solid var(--border); padding-top:12px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div class="transaction-detail-item">
+          <div class="label"><i class="ti ti-map-pin"></i> Location</div>
+          <div class="value" style="font-size:13px;">${client.location || '—'}</div>
+        </div>
+        <div class="transaction-detail-item">
+          <div class="label"><i class="ti ti-calendar"></i> First Purchase</div>
+          <div class="value" style="font-size:13px;">${client.date ? fmtDate(client.date) : '—'}</div>
+        </div>
+        <div class="transaction-detail-item" style="grid-column: 1 / -1;">
+          <div class="label"><i class="ti ti-user-plus"></i> Referred By</div>
+          <div class="value" style="font-size:13px;">
+            ${referrer ? `<span style="font-weight:600; color:var(--red);">${referrer.name}</span> (Distributor)` : '<span style="color:var(--text3);">Walk-in (No referral)</span>'}
+          </div>
+        </div>
+        <div class="transaction-detail-item" style="grid-column: 1 / -1;">
+          <div class="label"><i class="ti ti-shopping-cart"></i> Products Purchased</div>
+          <div class="value" style="font-size:13px; font-weight:400;">${client.products || '—'}</div>
+        </div>
+        ${client.notes ? `
+        <div class="transaction-detail-item" style="grid-column: 1 / -1;">
+          <div class="label"><i class="ti ti-notes"></i> Notes</div>
+          <div class="value" style="font-size:13px; font-weight:400; background:var(--gold-light); padding:8px 12px; border-radius:var(--radius); border-left:3px solid var(--gold);">
+            ${client.notes}
+          </div>
+        </div>` : `
+        <div class="transaction-detail-item" style="grid-column: 1 / -1;">
+          <div class="label"><i class="ti ti-notes"></i> Notes</div>
+          <div class="value" style="font-size:13px; font-weight:400; color:var(--text3); font-style:italic;">No notes for this client</div>
+        </div>`}
+      </div>
+    </div>
+    
+    ${purchases.length > 0 ? `
+    <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:12px;">
+      <div style="font-weight:600; margin-bottom:8px; font-size:14px;">
+        <i class="ti ti-receipt-2" style="color:var(--red);"></i> Purchase History (${purchases.length})
+      </div>
+      ${purchases.sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 10).map(p => `
+        <div class="sale-row" style="cursor:pointer;" onclick="openTransactionDetail('${p.id}')">
+          <div>
+            <div style="font-size:13px; font-weight:500;">${p.products || '—'}</div>
+            <div style="font-size:11px; color:var(--text3);">${fmtDate(p.date)} · ${distName(p.distId)}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:600;">${fmtKsh(p.value)}</div>
+            <span class="badge ${p.paid ? 'badge-paid' : 'badge-pending'}" style="font-size:10px;">${p.paid ? 'Paid' : 'Pending'}</span>
+          </div>
+        </div>
+      `).join('')}
+      ${purchases.length > 10 ? `<div style="font-size:12px; color:var(--text3); text-align:center; padding:6px 0;">+ ${purchases.length - 10} more purchases</div>` : ''}
+    </div>` : `
+    <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:12px;">
+      <div style="font-weight:600; margin-bottom:8px; font-size:14px;">
+        <i class="ti ti-receipt-2" style="color:var(--text3);"></i> Purchase History
+      </div>
+      <div style="text-align:center; padding:16px; color:var(--text3); font-style:italic;">
+        No purchases recorded for this client yet.
+      </div>
+    </div>`}
+  `;
+  
+  openModal('m-client-detail');
+}
+
 document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));
 
 function populateSel(selId, arr, placeholder, required = false) {
@@ -1124,19 +1252,40 @@ async function deleteClient(id){
   await loadAll();renderClients();toast('Deleted');
 }
 function renderClients(){
-  document.getElementById('clients-count').textContent=`${DB.clients.length} client${DB.clients.length!==1?'s':''}`;
-  const tb=document.getElementById('tb-clients');
-  if(!DB.clients.length){tb.innerHTML=`<tr><td colspan="8"><div class="empty-state"><i class="ti ti-user-check"></i><p>No clients yet</p><small>Add clients who have purchased medicine</small></div></td></tr>`;return}
-  tb.innerHTML=DB.clients.map(c=>`<tr>
-    <td><div class="person-cell"><div class="avatar">${initials(c.name)}</div><div class="person-info"><div class="name">${c.name}</div></div></div></td>
-    <td>${c.phone||'—'}</td>
-    <td>${c.referredBy?distName(c.referredBy):'<span style="color:var(--text3)">Walk-in</span>'}</td>
-    <td style="font-size:12px;max-width:160px">${c.products||'—'}</td>
-    <td style="font-weight:600">${c.amount?fmtKsh(c.amount):'—'}</td>
-    <td>${fmtDate(c.date)}</td>
-    <td style="font-size:12px;color:var(--text2);max-width:140px">${c.notes||'—'}</td>
-    <td><button class="btn btn-xs btn-danger" onclick="deleteClient('${c.id}')"><i class="ti ti-trash"></i></button></td>
-  </tr>`).join('');
+  document.getElementById('clients-count').textContent = `${DB.clients.length} client${DB.clients.length !== 1 ? 's' : ''}`;
+  const tb = document.getElementById('tb-clients');
+  if (!DB.clients.length) {
+    tb.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i class="ti ti-user-check"></i><p>No clients yet</p><small>Add clients who have purchased medicine</small></div></td></tr>`;
+    return;
+  }
+  
+  tb.innerHTML = DB.clients.map(c => {
+    const referrer = c.referredBy ? DB.distributors.find(d => d.id === c.referredBy) : null;
+    const purchases = DB.sales.filter(s => s.clientId === c.id);
+    const totalSpent = purchases.reduce((sum, s) => sum + (s.value || 0), 0);
+    
+    return `<tr class="client-clickable-row" onclick="openClientDetail('${c.id}')" title="Click to view client details">
+      <td><div class="person-cell">
+        <div class="avatar">${initials(c.name)}</div>
+        <div class="person-info">
+          <div class="name">${c.name}</div>
+          <div class="sub">${purchases.length} purchase${purchases.length !== 1 ? 's' : ''} · ${fmtKsh(totalSpent)}</div>
+        </div>
+      </div></td>
+      <td>${c.phone || '—'}</td>
+      <td>${referrer ? `<span style="font-weight:500; color:var(--red);">${referrer.name}</span>` : '<span style="color:var(--text3)">Walk-in</span>'}</td>
+      <td style="font-size:12px; max-width:160px;">${c.products || '—'}</td>
+      <td style="font-weight:600;">${c.amount ? fmtKsh(c.amount) : '—'}</td>
+      <td>${fmtDate(c.date)}</td>
+      <td style="font-size:12px; color:var(--text2); max-width:140px;">${c.notes || '—'}</td>
+      <td>
+        <div class="actions-cell" onclick="event.stopPropagation();">
+          <button class="btn btn-xs" onclick="openClientDetail('${c.id}')"><i class="ti ti-eye"></i></button>
+          <button class="btn btn-xs btn-danger" onclick="deleteClient('${c.id}')"><i class="ti ti-trash"></i></button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
 }
 
 // ========= SALES / COMMISSIONS =========
