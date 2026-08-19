@@ -142,7 +142,15 @@ def resource_out(r):
         "id": r["id"], "title": r["title"], "type": r.get("type", "other"), 
         "link": r.get("link", ""), "desc": r.get("description", ""), "date": r.get("date_added", ""),
     }
-
+def medicine_out(r):
+    return {
+        "id": r["id"], 
+        "name": r["name"], 
+        "description": r.get("description", ""),
+        "points": r.get("points", 0),
+        "category": r.get("category", ""),
+        "date_added": r.get("date_added", ""),
+    }
 
 # ---------------------------------------------------------------------
 # Auth: session-based login gate in front of the whole app
@@ -280,9 +288,13 @@ def api_all():
         sales_resp = supabase.table('sales').select('*').order('created_at').execute()
         sales = [sale_out(r) for r in sales_resp.data] if sales_resp.data else []
 
-        # Get resources
+                # Get resources
         resources_resp = supabase.table('resources').select('*').order('created_at').execute()
         resources = [resource_out(r) for r in resources_resp.data] if resources_resp.data else []
+
+        # Get medicines
+        medicines_resp = supabase.table('medicines').select('*').order('name').execute()
+        medicines = [medicine_out(r) for r in medicines_resp.data] if medicines_resp.data else []
 
         return jsonify({
             "students": students,
@@ -290,6 +302,7 @@ def api_all():
             "clients": clients,
             "sales": sales,
             "resources": resources,
+            "medicines": medicines,
         })
     except Exception as e:
         print(f"Error in /api/all: {e}")
@@ -566,6 +579,7 @@ def create_sale():
         d = request.get_json(force=True)
         dist_id = d.get("distId")
         value = float(d.get("value") or 0)
+        points = int(d.get("points") or 0)  # NEW: Get points from request
         
         if not dist_id:
             return jsonify({"error": "Please select a distributor"}), 400
@@ -586,6 +600,19 @@ def create_sale():
             "paid": 0,
         }
         supabase.table('sales').insert(data).execute()
+        
+        # NEW: Award points to distributor if any
+        if points > 0:
+            log_data = {
+                "distributor_id": dist_id,
+                "points": points,
+                "reason": f"Sale #{sid} - {data['products']}",
+                "notes": f"Points from sale recorded on {data['sale_date']}",
+                "log_date": today(),
+            }
+            supabase.table('points_log').insert(log_data).execute()
+            print(f"✅ Awarded {points} points to distributor {dist_id} for sale {sid}")
+        
         return jsonify({"id": sid}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 400
@@ -661,6 +688,76 @@ def delete_resource(rid):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+# ---------------------------------------------------------------------
+# MEDICINES
+# ---------------------------------------------------------------------
+@app.route("/api/medicines", methods=["GET"])
+def get_medicines():
+    if supabase is None:
+        return jsonify({"error": "Supabase client not initialized"}), 500
+    
+    try:
+        response = supabase.table('medicines').select('*').order('name').execute()
+        medicines = [medicine_out(r) for r in response.data] if response.data else []
+        return jsonify(medicines)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/medicines", methods=["POST"])
+def create_medicine():
+    if supabase is None:
+        return jsonify({"error": "Supabase client not initialized"}), 500
+    
+    try:
+        d = request.get_json(force=True)
+        if not d.get("name", "").strip():
+            return jsonify({"error": "Name is required"}), 400
+        
+        mid = uid("m")
+        data = {
+            "id": mid,
+            "name": d["name"].strip(),
+            "description": d.get("description", ""),
+            "points": int(d.get("points") or 0),
+            "category": d.get("category", ""),
+            "date_added": today(),
+        }
+        supabase.table('medicines').insert(data).execute()
+        return jsonify({"id": mid}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route("/api/medicines/<mid>", methods=["PUT"])
+def update_medicine(mid):
+    if supabase is None:
+        return jsonify({"error": "Supabase client not initialized"}), 500
+    
+    try:
+        d = request.get_json(force=True)
+        data = {
+            "name": d.get("name", ""),
+            "description": d.get("description", ""),
+            "points": int(d.get("points") or 0),
+            "category": d.get("category", ""),
+        }
+        supabase.table('medicines').update(data).eq('id', mid).execute()
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route("/api/medicines/<mid>", methods=["DELETE"])
+def delete_medicine(mid):
+    if supabase is None:
+        return jsonify({"error": "Supabase client not initialized"}), 500
+    
+    try:
+        supabase.table('medicines').delete().eq('id', mid).execute()
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 # ---------------------------------------------------------------------
 # Health check
