@@ -3087,12 +3087,54 @@ function loadSettingsOnInit() {
 let currentDistributorId = null;
 
 // Generate PDF for a distributor
+// Generate PDF for a distributor - OPTIMIZED
 async function generateDistributorPDF() {
     const id = currentDistributorId;
     if (!id) { toast('No distributor selected'); return; }
     
     const d = DB.distributors.find(x => x.id === id);
     if (!d) { toast('Distributor not found'); return; }
+    
+    // ===== SHOW LOADING OVERLAY =====
+    const loadingId = 'pdf-loading-' + Date.now();
+    const overlay = document.createElement('div');
+    overlay.id = loadingId;
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+    `;
+    overlay.innerHTML = `
+        <div style="
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 32px 40px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        ">
+            <div style="
+                width: 50px;
+                height: 50px;
+                border: 4px solid var(--border);
+                border-top-color: var(--red);
+                border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+                margin: 0 auto 16px;
+            "></div>
+            <div style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">Generating PDF...</div>
+            <div style="font-size: 13px; color: var(--text2);">Please wait, this may take a moment</div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
     
     const sales = distSales(id);
     const comm = distComm(id);
@@ -3274,11 +3316,12 @@ async function generateDistributorPDF() {
         const opt = {
             margin: [0.5, 0.5, 0.5, 0.5],
             filename: `FoHow_Distributor_${d.name}_${today()}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
+            image: { type: 'jpeg', quality: 0.92 },
             html2canvas: {
-                scale: 2,
+                scale: 1.5,
                 useCORS: true,
                 letterRendering: true,
+                logging: false,
             },
             jsPDF: {
                 unit: 'in',
@@ -3297,11 +3340,54 @@ async function generateDistributorPDF() {
     // Clean up
     setTimeout(() => {
         if (report.parentNode) report.remove();
+        const el = document.getElementById(loadingId);
+        if (el) el.remove();
     }, 1000);
 }
 
-// Generate commission report PDF
+// Generate commission report PDF - OPTIMIZED
 async function generateCommissionPDF() {
+    // ===== SHOW LOADING OVERLAY =====
+    const loadingId = 'pdf-loading-' + Date.now();
+    const overlay = document.createElement('div');
+    overlay.id = loadingId;
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+    `;
+    overlay.innerHTML = `
+        <div style="
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 32px 40px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        ">
+            <div style="
+                width: 50px;
+                height: 50px;
+                border: 4px solid var(--border);
+                border-top-color: var(--red);
+                border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+                margin: 0 auto 16px;
+            "></div>
+            <div style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">Generating Commission Report...</div>
+            <div style="font-size: 13px; color: var(--text2);">Please wait, this may take a moment</div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    
     const total = DB.sales.reduce((a, s) => a + (+s.value || 0), 0);
     const totComm = DB.sales.reduce((a, s) => a + (+s.commission || 0), 0);
     const paid = DB.sales.filter(s => s.paid).reduce((a, s) => a + (+s.commission || 0), 0);
@@ -3404,8 +3490,8 @@ async function generateCommissionPDF() {
         await html2pdf().set({
             margin: [0.5, 0.5, 0.5, 0.5],
             filename: `FoHow_Commission_Report_${today()}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
+            image: { type: 'jpeg', quality: 0.92 },
+            html2canvas: { scale: 1.5 },
             jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
         }).from(report).save();
         toast('✅ PDF downloaded successfully!');
@@ -3415,11 +3501,54 @@ async function generateCommissionPDF() {
     
     setTimeout(() => {
         if (report.parentNode) report.remove();
+        const el = document.getElementById(loadingId);
+        if (el) el.remove();
     }, 1000);
 }
 
-// Generate full business report PDF
+// Generate full business report PDF - OPTIMIZED
 async function generateBusinessReportPDF() {
+    // ===== SHOW LOADING OVERLAY =====
+    const loadingId = 'pdf-loading-' + Date.now();
+    const overlay = document.createElement('div');
+    overlay.id = loadingId;
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+    `;
+    overlay.innerHTML = `
+        <div style="
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 32px 40px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        ">
+            <div style="
+                width: 50px;
+                height: 50px;
+                border: 4px solid var(--border);
+                border-top-color: var(--red);
+                border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+                margin: 0 auto 16px;
+            "></div>
+            <div style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">Generating Business Report...</div>
+            <div style="font-size: 13px; color: var(--text2);">Please wait, this may take a moment</div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    
     const totalNetwork = DB.students.length + DB.distributors.length + DB.clients.length;
     const totalSales = DB.sales.length;
     const totalRevenue = DB.sales.reduce((a, s) => a + (+s.value || 0), 0);
@@ -3531,8 +3660,8 @@ async function generateBusinessReportPDF() {
         await html2pdf().set({
             margin: [0.5, 0.5, 0.5, 0.5],
             filename: `FoHow_Business_Report_${today()}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
+            image: { type: 'jpeg', quality: 0.92 },
+            html2canvas: { scale: 1.5 },
             jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
         }).from(report).save();
         toast('✅ PDF downloaded successfully!');
@@ -3542,6 +3671,8 @@ async function generateBusinessReportPDF() {
     
     setTimeout(() => {
         if (report.parentNode) report.remove();
+        const el = document.getElementById(loadingId);
+        if (el) el.remove();
     }, 1000);
 }
 // ========= INIT =========
