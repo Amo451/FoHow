@@ -219,10 +219,140 @@ tbody tr.client-clickable-row:active{background:var(--border);transform:scale(0.
 @media (max-width: 768px) {
   .transaction-detail-grid { grid-template-columns: 1fr; }
 }
-</style>
+
+/* ===== LOADING SKELETON ===== */
+#loading-skeleton {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg);
+  z-index: 9999;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  overflow-y: auto;
+  transition: opacity 0.6s ease;
+}
+.skeleton {
+  background: var(--border);
+  border-radius: 6px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+.skeleton-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+.skeleton-card .skeleton {
+  background: var(--border2);
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* ===== WELCOME BANNER ===== */
+#welcome-banner {
+  background: linear-gradient(135deg, var(--red), var(--red2));
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  color: #f5e6a3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.6s ease;
+}
+#welcome-banner.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.welcome-greeting {
+  font-size: 18px;
+  font-weight: 700;
+}
+.welcome-sub {
+  font-size: 13px;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+.welcome-stats {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.welcome-stat {
+  text-align: center;
+}
+.welcome-stat .num {
+  font-size: 20px;
+  font-weight: 700;
+}
+.welcome-stat .label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+}
+.welcome-divider {
+  width: 1px;
+  height: 30px;
+  background: rgba(245,230,163,0.3);
+}
 </style>
 </head>
 <body>
+<body>
+<!-- ===== LOADING SKELETON ===== -->
+<div id="loading-skeleton">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <div>
+      <div class="skeleton" style="width:180px; height:28px;"></div>
+      <div class="skeleton" style="width:120px; height:16px; margin-top:6px;"></div>
+    </div>
+  </div>
+  
+  <!-- Stats Row Skeleton -->
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:20px;">
+    <div class="skeleton-card"><div class="skeleton" style="width:60px; height:11px; margin-bottom:6px;"></div><div class="skeleton" style="width:40px; height:24px;"></div></div>
+    <div class="skeleton-card" style="animation-delay:0.15s;"><div class="skeleton" style="width:60px; height:11px; margin-bottom:6px;"></div><div class="skeleton" style="width:40px; height:24px;"></div></div>
+    <div class="skeleton-card" style="animation-delay:0.3s;"><div class="skeleton" style="width:60px; height:11px; margin-bottom:6px;"></div><div class="skeleton" style="width:40px; height:24px;"></div></div>
+    <div class="skeleton-card" style="animation-delay:0.45s;"><div class="skeleton" style="width:60px; height:11px; margin-bottom:6px;"></div><div class="skeleton" style="width:40px; height:24px;"></div></div>
+    <div class="skeleton-card" style="animation-delay:0.6s;"><div class="skeleton" style="width:60px; height:11px; margin-bottom:6px;"></div><div class="skeleton" style="width:40px; height:24px;"></div></div>
+  </div>
+  
+  <!-- Cards Skeleton -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden;">
+      <div style="padding:14px 18px; border-bottom:1px solid var(--border);">
+        <div class="skeleton" style="width:160px; height:16px;"></div>
+      </div>
+      <div style="padding:12px 16px;">
+        <div class="skeleton" style="height:40px; margin-bottom:8px;"></div>
+        <div class="skeleton" style="height:40px; margin-bottom:8px; animation-delay:0.2s;"></div>
+        <div class="skeleton" style="height:40px; animation-delay:0.4s;"></div>
+      </div>
+    </div>
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden;">
+      <div style="padding:14px 18px; border-bottom:1px solid var(--border);">
+        <div class="skeleton" style="width:160px; height:16px;"></div>
+      </div>
+      <div style="padding:12px 16px;">
+        <div class="skeleton" style="height:40px; margin-bottom:8px; animation-delay:0.1s;"></div>
+        <div class="skeleton" style="height:40px; margin-bottom:8px; animation-delay:0.3s;"></div>
+        <div class="skeleton" style="height:40px; animation-delay:0.5s;"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="topbar">
   <div class="logo">
@@ -258,6 +388,31 @@ tbody tr.client-clickable-row:active{background:var(--border);transform:scale(0.
   <div class="page-header">
     <div><div class="page-title">Dashboard</div><div class="page-sub">Your FoHow network at a glance</div></div>
   </div>
+
+  <!-- ===== WELCOME BANNER ===== -->
+  <div id="welcome-banner">
+    <div>
+      <div class="welcome-greeting">👋 Welcome back, Admin!</div>
+      <div class="welcome-sub">Here's what's happening in your FoHow Natural Solutions network</div>
+    </div>
+    <div class="welcome-stats">
+      <div class="welcome-stat">
+        <div class="num" id="welcome-total">0</div>
+        <div class="label">Total Network</div>
+      </div>
+      <div class="welcome-divider"></div>
+      <div class="welcome-stat">
+        <div class="num" id="welcome-sales">0</div>
+        <div class="label">Total Sales</div>
+      </div>
+      <div class="welcome-divider"></div>
+      <div class="welcome-stat">
+        <div class="num" id="welcome-commission">KSh 0</div>
+        <div class="label">Commission Earned</div>
+      </div>
+    </div>
+  </div>
+
   <div class="stats-row" id="ov-stats"></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
     <div class="card">
@@ -1553,29 +1708,50 @@ function renderResources(){
 
 // ========= OVERVIEW =========
 function renderOverview(){
-  const totComm=DB.sales.reduce((a,s)=>a+(+s.commission||0),0);
-  const pending=DB.sales.filter(s=>!s.paid).reduce((a,s)=>a+(+s.commission||0),0);
-  document.getElementById('ov-stats').innerHTML=`
+  const totComm = DB.sales.reduce((a,s) => a + (+s.commission || 0), 0);
+  const pending = DB.sales.filter(s => !s.paid).reduce((a,s) => a + (+s.commission || 0), 0);
+  
+  // Update welcome banner
+  const totalNetwork = DB.students.length + DB.distributors.length + DB.clients.length;
+  const totalSales = DB.sales.length;
+  document.getElementById('welcome-total').textContent = totalNetwork;
+  document.getElementById('welcome-sales').textContent = totalSales;
+  document.getElementById('welcome-commission').textContent = fmtKsh(totComm);
+  
+  // Show welcome banner with animation
+  const banner = document.getElementById('welcome-banner');
+  if (banner) {
+    setTimeout(() => {
+      banner.classList.add('visible');
+    }, 150);
+  }
+  
+  // Update stats
+  document.getElementById('ov-stats').innerHTML = `
     <div class="stat-card"><div class="stat-label">Students</div><div class="stat-value">${DB.students.length}</div><div class="stat-sub">Learning the network</div></div>
     <div class="stat-card"><div class="stat-label">Distributors</div><div class="stat-value">${DB.distributors.length}</div><div class="stat-sub">Active referrers</div></div>
     <div class="stat-card"><div class="stat-label">Clients</div><div class="stat-value">${DB.clients.length}</div><div class="stat-sub">Medicine buyers</div></div>
     <div class="stat-card"><div class="stat-label">Total sales</div><div class="stat-value">${DB.sales.length}</div></div>
     <div class="stat-card"><div class="stat-label">Commission earned</div><div class="stat-value" style="font-size:17px">${fmtKsh(totComm)}</div><div class="stat-sub" style="color:var(--orange)">${fmtKsh(pending)} pending</div></div>`;
-  const recent=[...DB.sales].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,6);
-  document.getElementById('ov-recent').innerHTML=recent.length?recent.map(s=>`
+  
+  const recent = [...DB.sales].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,6);
+  document.getElementById('ov-recent').innerHTML = recent.length ? recent.map(s => `
     <div class="sale-row">
-      <div><div style="font-size:13px;font-weight:600">${distName(s.distId)}</div><div style="font-size:11px;color:var(--text3)">${s.products||'—'} · ${fmtDate(s.date)}</div></div>
-      <div style="text-align:right"><div style="font-weight:600;font-size:13px">${fmtKsh(s.commission)}</div><span class="badge ${s.paid?'badge-paid':'badge-pending'}" style="font-size:10px">${s.paid?'Paid':'Pending'}</span></div>
-    </div>`).join(''):'<p style="padding:12px 0;color:var(--text3);font-size:13px">No commissions recorded yet.</p>';
-  const top=[...DB.distributors].sort((a,b)=>(b.points||0)-(a.points||0)).slice(0,5);
-  document.getElementById('ov-top').innerHTML=top.length?top.map((d,i)=>`
+      <div><div style="font-size:13px;font-weight:600">${distName(s.distId)}</div><div style="font-size:11px;color:var(--text3)">${s.products || '—'} · ${fmtDate(s.date)}</div></div>
+      <div style="text-align:right"><div style="font-weight:600;font-size:13px">${fmtKsh(s.commission)}</div><span class="badge ${s.paid ? 'badge-paid' : 'badge-pending'}" style="font-size:10px">${s.paid ? 'Paid' : 'Pending'}</span></div>
+    </div>
+  `).join('') : '<p style="padding:12px 0;color:var(--text3);font-size:13px">No commissions recorded yet.</p>';
+  
+  const top = [...DB.distributors].sort((a,b) => (b.points || 0) - (a.points || 0)).slice(0,5);
+  document.getElementById('ov-top').innerHTML = top.length ? top.map((d,i) => `
     <div class="sale-row">
       <div class="person-cell">
-        <div style="width:24px;height:24px;border-radius:50%;background:${['#f5e6a3','#e8e8e8','#f5dfc0','var(--surface2)','var(--surface2)'][i]};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${['#6e4800','#555','#8a5500','var(--text3)','var(--text3)'][i]};flex-shrink:0">${i+1}</div>
+        <div style="width:24px;height:24px;border-radius:50%;background:${['#f5e6a3','#e8e8e8','#f5dfc0','var(--surface2)','var(--surface2)'][i]};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${['#6e4800','#555','#8a5500','var(--text3)','var(--text3)'][i]};flex-shrink:0">${i + 1}</div>
         <div style="font-size:13px;font-weight:600">${d.name}</div>
       </div>
-      <span class="points-badge"><i class="ti ti-star"></i>${d.points||0} pts</span>
-    </div>`).join(''):'<p style="padding:12px 0;color:var(--text3);font-size:13px">No distributors yet.</p>';
+      <span class="points-badge"><i class="ti ti-star"></i>${d.points || 0} pts</span>
+    </div>
+  `).join('') : '<p style="padding:12px 0;color:var(--text3);font-size:13px">No distributors yet.</p>';
 }
 
 // ========= SEARCH =========
@@ -1636,11 +1812,22 @@ function exportAll(){
 
 // ========= INIT =========
 (async function init(){
-  try{
+  const skeleton = document.getElementById('loading-skeleton');
+  
+  try {
     await loadAll();
-  }catch(e){
+  } catch(e) {
     toast('Could not reach the server — is app.py running?');
   }
+  
+  // Fade out skeleton and show content
+  if (skeleton) {
+    skeleton.style.opacity = '0';
+    setTimeout(() => {
+      skeleton.style.display = 'none';
+    }, 600);
+  }
+  
   renderOverview();
 })();
 </script>
