@@ -1572,7 +1572,7 @@ function openModal(id){
   inits[id]?.();
 }
 function closeModal(id){document.getElementById(id).classList.remove('open')}
-  // ========= NEW: TRANSACTION DETAIL =========
+// ========= TRANSACTION DETAIL =========
 function openTransactionDetail(saleId) {
   const sale = DB.sales.find(x => x.id === saleId);
   if (!sale) { toast('Transaction not found'); return; }
@@ -1594,10 +1594,39 @@ function openTransactionDetail(saleId) {
     
     <div style="border-top:1px solid var(--border); padding-top:12px; margin-top:4px;">
       <div class="transaction-detail-grid">
-        <div class="transaction-detail-item">
+        <!-- Distributor with Phone Number -->
+        <div class="transaction-detail-item" style="grid-column: 1 / -1; background: var(--gold-light); border: 1px solid #e8d08a;">
           <div class="label"><i class="ti ti-user"></i> Distributor</div>
-          <div class="value">${distributor ? distributor.name : '—'}</div>
+          <div class="value" style="font-size:16px; font-weight:700; color:var(--red);">
+            ${distributor ? distributor.name : '—'}
+            ${distributor && distributor.phone ? `
+              <span style="display:block; font-size:14px; font-weight:400; color:var(--text); margin-top:2px;">
+                <i class="ti ti-phone" style="color:var(--green);"></i> 
+                <span style="font-family:monospace; font-size:15px; font-weight:600;">${distributor.phone}</span>
+                <button onclick="copyPhoneNumber('${distributor.phone}')" 
+                        style="background:none; border:none; color:var(--blue); cursor:pointer; font-size:13px; margin-left:8px;"
+                        title="Copy phone number">
+                  <i class="ti ti-copy"></i> Copy
+                </button>
+                <a href="tel:${distributor.phone}" 
+                   style="background:var(--green); color:white; padding:2px 12px; border-radius:12px; text-decoration:none; font-size:12px; margin-left:8px; display:inline-block;">
+                  <i class="ti ti-phone-call"></i> Call
+                </a>
+                ${sale.paid === false || sale.paid === 0 ? `
+                  <a href="tel:${distributor.phone}" 
+                     style="background:var(--gold); color:white; padding:2px 12px; border-radius:12px; text-decoration:none; font-size:12px; margin-left:4px; display:inline-block;">
+                    <i class="ti ti-brand-whatsapp"></i> WhatsApp
+                  </a>
+                ` : ''}
+              </span>
+            ` : `
+              <span style="display:block; font-size:12px; color:var(--text3); margin-top:2px;">
+                <i class="ti ti-phone-off"></i> No phone number on file
+              </span>
+            `}
+          </div>
         </div>
+        
         <div class="transaction-detail-item">
           <div class="label"><i class="ti ti-user-check"></i> Client</div>
           <div class="value">${client ? client.name : 'Walk-in'}</div>
@@ -1616,7 +1645,7 @@ function openTransactionDetail(saleId) {
         </div>
         <div class="transaction-detail-item">
           <div class="label"><i class="ti ti-coins"></i> Commission</div>
-          <div class="value" style="color:var(--red);">${fmtKsh(sale.commission)}</div>
+          <div class="value" style="color:var(--red); font-size:18px; font-weight:700;">${fmtKsh(sale.commission)}</div>
         </div>
         <div class="transaction-detail-item" style="grid-column: 1 / -1;">
           <div class="label"><i class="ti ti-package"></i> Products / Medicine</div>
@@ -1655,11 +1684,25 @@ function openTransactionDetail(saleId) {
     <div class="pending-box">
       <div class="title"><i class="ti ti-clock"></i> Payment Pending</div>
       <div class="sub">This transaction has not been paid yet. Use the "Pay" button to mark as paid.</div>
+      ${distributor && distributor.phone ? `
+        <div style="margin-top:8px; padding:8px 12px; background:var(--gold-light); border-radius:var(--radius); border:1px solid #e8d08a;">
+          <div style="font-size:12px; font-weight:600; color:var(--gold-text);">
+            <i class="ti ti-phone"></i> Pay ${distributor.name} via M-Pesa:
+          </div>
+          <div style="font-size:15px; font-weight:700; font-family:monospace; margin-top:4px;">
+            ${distributor.phone}
+            <button onclick="copyPhoneNumber('${distributor.phone}')" 
+                    style="background:none; border:none; color:var(--blue); cursor:pointer; font-size:13px; margin-left:8px;">
+              <i class="ti ti-copy"></i>
+            </button>
+          </div>
+        </div>
+      ` : ''}
     </div>
     `}
   `;
   
-   openModal('m-transaction-detail');
+  openModal('m-transaction-detail');
 }
 
 // ========= NEW: CLIENT DETAIL =========
@@ -2049,6 +2092,34 @@ function onPctChange(){
   const pct=gv('sl-pct');
   document.getElementById('sl-pct-lbl').textContent=pct+'%';
   calcComm();
+}
+  // ===== COPY PHONE NUMBER =====
+function copyPhoneNumber(phone) {
+    // Clean the phone number (remove spaces, dashes, etc.)
+    const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+    
+    // Copy to clipboard
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(cleanPhone).then(() => {
+            toast('📱 Phone number copied to clipboard!');
+        }).catch(() => {
+            // Fallback
+            fallbackCopyPhone(cleanPhone);
+        });
+    } else {
+        // Fallback for older browsers
+        fallbackCopyPhone(cleanPhone);
+    }
+}
+
+function fallbackCopyPhone(phone) {
+    const tempInput = document.createElement('input');
+    tempInput.value = phone;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    document.execCommand('copy');
+    document.body.removeChild(tempInput);
+    toast('📱 Phone number copied to clipboard!');
 }
   // ===== NEW: Medicine Selection & Points =====
 let selectedMedicines = [];
