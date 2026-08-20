@@ -2164,7 +2164,21 @@ async function saveSale(){
   };
   
   try {
-    await api('/sales', { method: 'POST', body: JSON.stringify(payload) });
+    // Store the result to check for promotion
+    const result = await api('/sales', { method: 'POST', body: JSON.stringify(payload) });
+    
+    // ===== NEW: Check if distributor was promoted =====
+    if (result && result.promoted) {
+      const distributor = DB.distributors.find(d => d.id === distId);
+      if (distributor) {
+        // Show celebration notification
+        toast(`🎉🎊 ${distributor.name} is now a QUALIFIED DISTRIBUTOR!`);
+        // Add a special celebration effect
+        showCelebration(distributor.name);
+      }
+    }
+    // ===== END NEW =====
+    
   } catch(e) {
     alert(e.message);
     return;
@@ -2180,6 +2194,7 @@ async function saveSale(){
   
   await loadAll();
   renderComm();
+  renderDist(); // Refresh distributor list to show updated points
   toast('Sale recorded with ' + totalPoints + ' PV points awarded');
 }
 function openPayModal(id){
