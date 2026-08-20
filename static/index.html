@@ -254,6 +254,9 @@ tbody tr.client-clickable-row:active{background:var(--border);transform:scale(0.
   0%, 100% { opacity: 0.6; }
   50% { opacity: 1; }
 }
+  @keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
 /* ===== WELCOME BANNER ===== */
 #welcome-banner {
@@ -311,45 +314,78 @@ tbody tr.client-clickable-row:active{background:var(--border);transform:scale(0.
 </head>
 <body>
 <body>
-<!-- ===== LOADING SKELETON ===== -->
+<!-- ===== ENHANCED LOADING SKELETON ===== -->
 <div id="loading-skeleton">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-    <div>
-      <div class="skeleton" style="width:180px; height:28px;"></div>
-      <div class="skeleton" style="width:120px; height:16px; margin-top:6px;"></div>
-    </div>
-  </div>
-  
-  <!-- Stats Row Skeleton -->
-  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:20px;">
-    <div class="skeleton-card"><div class="skeleton" style="width:60px; height:11px; margin-bottom:6px;"></div><div class="skeleton" style="width:40px; height:24px;"></div></div>
-    <div class="skeleton-card" style="animation-delay:0.15s;"><div class="skeleton" style="width:60px; height:11px; margin-bottom:6px;"></div><div class="skeleton" style="width:40px; height:24px;"></div></div>
-    <div class="skeleton-card" style="animation-delay:0.3s;"><div class="skeleton" style="width:60px; height:11px; margin-bottom:6px;"></div><div class="skeleton" style="width:40px; height:24px;"></div></div>
-    <div class="skeleton-card" style="animation-delay:0.45s;"><div class="skeleton" style="width:60px; height:11px; margin-bottom:6px;"></div><div class="skeleton" style="width:40px; height:24px;"></div></div>
-    <div class="skeleton-card" style="animation-delay:0.6s;"><div class="skeleton" style="width:60px; height:11px; margin-bottom:6px;"></div><div class="skeleton" style="width:40px; height:24px;"></div></div>
-  </div>
-  
-  <!-- Cards Skeleton -->
-  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-    <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden;">
-      <div style="padding:14px 18px; border-bottom:1px solid var(--border);">
-        <div class="skeleton" style="width:160px; height:16px;"></div>
-      </div>
-      <div style="padding:12px 16px;">
-        <div class="skeleton" style="height:40px; margin-bottom:8px;"></div>
-        <div class="skeleton" style="height:40px; margin-bottom:8px; animation-delay:0.2s;"></div>
-        <div class="skeleton" style="height:40px; animation-delay:0.4s;"></div>
+  <div style="display:flex; flex-direction:column; min-height:100vh;">
+    
+    <!-- Loading Icon & Brand -->
+    <div style="display:flex; justify-content:center; margin-bottom:16px;">
+      <div style="text-align:center;">
+        <div style="
+          width:60px; 
+          height:60px; 
+          border:4px solid var(--border); 
+          border-top-color: var(--red); 
+          border-radius:50%; 
+          animation: spin 0.8s linear infinite;
+          margin: 0 auto 12px;
+        "></div>
+        <div style="font-size:16px; font-weight:700; color:var(--red);">FoHow Natural Solutions</div>
+        <div style="font-size:13px; color:var(--text2);">Preparing your dashboard...</div>
       </div>
     </div>
-    <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden;">
-      <div style="padding:14px 18px; border-bottom:1px solid var(--border);">
-        <div class="skeleton" style="width:160px; height:16px;"></div>
+
+    <!-- Progress Bar -->
+    <div style="margin-bottom:20px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:14px 18px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span style="font-size:13px; font-weight:600; color:var(--text);">Loading network data</span>
+        <span style="font-size:13px; font-weight:600; color:var(--red);" id="loading-percentage">0%</span>
       </div>
-      <div style="padding:12px 16px;">
-        <div class="skeleton" style="height:40px; margin-bottom:8px; animation-delay:0.1s;"></div>
-        <div class="skeleton" style="height:40px; margin-bottom:8px; animation-delay:0.3s;"></div>
-        <div class="skeleton" style="height:40px; animation-delay:0.5s;"></div>
+      <div style="width:100%; height:6px; background:var(--border); border-radius:4px; overflow:hidden;">
+        <div id="loading-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, var(--red), var(--gold)); border-radius:4px; transition:width 0.3s ease;"></div>
       </div>
+      <div style="display:flex; justify-content:space-between; margin-top:6px;">
+        <span style="font-size:11px; color:var(--text3);">🔄 Loading data from database</span>
+        <span style="font-size:11px; color:var(--text3);" id="loading-status">Initializing...</span>
+      </div>
+    </div>
+
+    <!-- Stats Row Skeleton -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:16px;">
+      <div class="skeleton-card"><div class="skeleton" style="width:60px; height:11px; margin-bottom:6px;"></div><div class="skeleton" style="width:40px; height:24px;"></div></div>
+      <div class="skeleton-card" style="animation-delay:0.15s;"><div class="skeleton" style="width:60px; height:11px; margin-bottom:6px;"></div><div class="skeleton" style="width:40px; height:24px;"></div></div>
+      <div class="skeleton-card" style="animation-delay:0.3s;"><div class="skeleton" style="width:60px; height:11px; margin-bottom:6px;"></div><div class="skeleton" style="width:40px; height:24px;"></div></div>
+      <div class="skeleton-card" style="animation-delay:0.45s;"><div class="skeleton" style="width:60px; height:11px; margin-bottom:6px;"></div><div class="skeleton" style="width:40px; height:24px;"></div></div>
+      <div class="skeleton-card" style="animation-delay:0.6s;"><div class="skeleton" style="width:60px; height:11px; margin-bottom:6px;"></div><div class="skeleton" style="width:40px; height:24px;"></div></div>
+    </div>
+    
+    <!-- Cards Skeleton -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; flex:1;">
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden;">
+        <div style="padding:14px 18px; border-bottom:1px solid var(--border);">
+          <div class="skeleton" style="width:160px; height:16px;"></div>
+        </div>
+        <div style="padding:12px 16px;">
+          <div class="skeleton" style="height:40px; margin-bottom:8px; border-radius:6px;"></div>
+          <div class="skeleton" style="height:40px; margin-bottom:8px; border-radius:6px; animation-delay:0.2s;"></div>
+          <div class="skeleton" style="height:40px; border-radius:6px; animation-delay:0.4s;"></div>
+        </div>
+      </div>
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden;">
+        <div style="padding:14px 18px; border-bottom:1px solid var(--border);">
+          <div class="skeleton" style="width:160px; height:16px;"></div>
+        </div>
+        <div style="padding:12px 16px;">
+          <div class="skeleton" style="height:40px; margin-bottom:8px; border-radius:6px; animation-delay:0.1s;"></div>
+          <div class="skeleton" style="height:40px; margin-bottom:8px; border-radius:6px; animation-delay:0.3s;"></div>
+          <div class="skeleton" style="height:40px; border-radius:6px; animation-delay:0.5s;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Tip -->
+    <div style="margin-top:20px; text-align:center; font-size:12px; color:var(--text3); border-top:1px solid var(--border); padding-top:14px;">
+      <span id="loading-tip">💡 Tip: Distributors need 500+ PV to become qualified</span>
     </div>
   </div>
 </div>
@@ -1810,23 +1846,85 @@ function exportAll(){
   toast('All data exported as spreadsheet');
 }
 
+// ========= LOADING TIPS =========
+const tips = [
+  '💡 Tip: Distributors need 500+ PV to become qualified',
+  '💡 Tip: Each medicine sale earns points for distributors',
+  '💡 Tip: Qualified distributors get higher commission rates',
+  '💡 Tip: You can export all data to Excel',
+  '💡 Tip: Click on any commission row to see details',
+  '💡 Tip: You can add new clients directly from the sale form',
+  '💡 Tip: Monitor your network growth in the Overview dashboard',
+  '💡 Tip: Students can be promoted to distributors',
+  '💡 Tip: Track your commissions and payments easily'
+];
+
 // ========= INIT =========
 (async function init(){
   const skeleton = document.getElementById('loading-skeleton');
+  const progressBar = document.getElementById('loading-progress-bar');
+  const percentageEl = document.getElementById('loading-percentage');
+  const statusEl = document.getElementById('loading-status');
+  const tipEl = document.getElementById('loading-tip');
+  
+  // Rotate tips
+  let tipIndex = 0;
+  if (tipEl) {
+    setInterval(() => {
+      tipEl.style.opacity = '0';
+      setTimeout(() => {
+        tipIndex = (tipIndex + 1) % tips.length;
+        tipEl.textContent = tips[tipIndex];
+        tipEl.style.opacity = '1';
+      }, 400);
+    }, 3500);
+  }
+  
+  // Update progress
+  let progress = 0;
+  const statuses = [
+    'Connecting to database...',
+    'Loading students...',
+    'Loading distributors...',
+    'Loading clients...',
+    'Loading sales...',
+    'Loading resources...',
+    'Almost ready...'
+  ];
+  let statusIndex = 0;
+  
+  const interval = setInterval(() => {
+    progress += Math.random() * 12 + 3;
+    if (progress > 90) progress = 90;
+    if (progressBar) progressBar.style.width = progress + '%';
+    if (percentageEl) percentageEl.textContent = Math.round(progress) + '%';
+    
+    if (statusIndex < statuses.length) {
+      if (statusEl) statusEl.textContent = statuses[statusIndex];
+      statusIndex++;
+    }
+  }, 400);
   
   try {
     await loadAll();
+    // Complete the loading
+    if (progressBar) progressBar.style.width = '100%';
+    if (percentageEl) percentageEl.textContent = '100%';
+    if (statusEl) statusEl.textContent = '✅ Ready!';
+    clearInterval(interval);
   } catch(e) {
     toast('Could not reach the server — is app.py running?');
   }
   
   // Fade out skeleton and show content
-  if (skeleton) {
-    skeleton.style.opacity = '0';
-    setTimeout(() => {
-      skeleton.style.display = 'none';
-    }, 600);
-  }
+  setTimeout(() => {
+    if (skeleton) {
+      skeleton.style.opacity = '0';
+      setTimeout(() => {
+        skeleton.style.display = 'none';
+      }, 600);
+    }
+  }, 500);
   
   renderOverview();
 })();
