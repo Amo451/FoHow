@@ -6,6 +6,7 @@
 <title>FoHow Natural Solutions — Admin</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -470,6 +471,58 @@ tbody tr.client-clickable-row:active{background:var(--border);transform:scale(0.
   </div>
 
   <div class="stats-row" id="ov-stats"></div>
+
+  <!-- ===== CHARTS SECTION ===== -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+    <!-- Sales Trend Chart -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="ti ti-chart-bar" style="color:var(--red);"></i> Sales Trend</div>
+        <span style="font-size:11px; color:var(--text3);">Last 7 days</span>
+      </div>
+      <div style="padding:12px; height:200px;">
+        <canvas id="salesTrendChart"></canvas>
+      </div>
+    </div>
+    
+    <!-- Distributor Status Chart -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="ti ti-chart-pie" style="color:var(--red);"></i> Distributor Status</div>
+        <span style="font-size:11px; color:var(--text3);" id="dist-status-label">Qualified: 0 · Unqualified: 0</span>
+      </div>
+      <div style="padding:12px; height:200px;">
+        <canvas id="distStatusChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Second Row of Charts -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+    <!-- Commission Trend Chart -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="ti ti-chart-line" style="color:var(--red);"></i> Commission Trend</div>
+        <span style="font-size:11px; color:var(--text3);">Last 7 days</span>
+      </div>
+      <div style="padding:12px; height:200px;">
+        <canvas id="commissionTrendChart"></canvas>
+      </div>
+    </div>
+    
+    <!-- Top Selling Products Chart -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="ti ti-pills" style="color:var(--red);"></i> Top Selling Products</div>
+        <span style="font-size:11px; color:var(--text3);">By sales volume</span>
+      </div>
+      <div style="padding:12px; height:200px;">
+        <canvas id="topProductsChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Existing Cards -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
     <div class="card">
       <div class="card-header"><div class="card-title"><i class="ti ti-receipt-2"></i> Recent commissions</div></div>
@@ -1818,7 +1871,7 @@ function renderOverview(){
     </div>
   `).join('') : '<p style="padding:12px 0;color:var(--text3);font-size:13px">No commissions recorded yet.</p>';
   
-  const top = [...DB.distributors].sort((a,b) => (b.points || 0) - (a.points || 0)).slice(0,5);
+   const top = [...DB.distributors].sort((a,b) => (b.points || 0) - (a.points || 0)).slice(0,5);
   document.getElementById('ov-top').innerHTML = top.length ? top.map((d,i) => `
     <div class="sale-row">
       <div class="person-cell">
@@ -1828,6 +1881,221 @@ function renderOverview(){
       <span class="points-badge"><i class="ti ti-star"></i>${d.points || 0} pts</span>
     </div>
   `).join('') : '<p style="padding:12px 0;color:var(--text3);font-size:13px">No distributors yet.</p>';
+  
+  // Render charts
+  setTimeout(renderCharts, 200);
+}
+  // ===== CHARTS =====
+let salesChart = null;
+let distChart = null;
+let commissionChart = null;
+let productsChart = null;
+
+function renderCharts() {
+  // --- 1. Sales Trend Chart ---
+  const salesCtx = document.getElementById('salesTrendChart');
+  if (!salesCtx) return;
+  
+  // Get last 7 days
+  const last7Days = [];
+  const today = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    last7Days.push(d.toISOString().slice(0,10));
+  }
+  
+  const salesData = last7Days.map(date => 
+    DB.sales.filter(s => s.date === date).reduce((sum, s) => sum + (parseFloat(s.value) || 0), 0)
+  );
+  const salesLabels = last7Days.map(d => {
+    const date = new Date(d + 'T00:00:00');
+    return date.toLocaleDateString('en-KE', { weekday: 'short', day: '2-digit' });
+  });
+  
+  if (salesChart) { salesChart.destroy(); salesChart = null; }
+  
+  salesChart = new Chart(salesCtx.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: salesLabels,
+      datasets: [{
+        label: 'Sales (KSh)',
+        data: salesData,
+        backgroundColor: 'rgba(139,26,26,0.7)',
+        borderColor: '#8B1A1A',
+        borderWidth: 2,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) { return 'KSh ' + value.toLocaleString(); }
+          }
+        }
+      }
+    }
+  });
+  
+  // --- 2. Distributor Status Chart ---
+  const distCtx = document.getElementById('distStatusChart');
+  if (distCtx) {
+    const qualified = DB.distributors.filter(d => d.qualified).length;
+    const unqualified = DB.distributors.length - qualified;
+    
+    const labelEl = document.getElementById('dist-status-label');
+    if (labelEl) {
+      labelEl.textContent = `Qualified: ${qualified} · Unqualified: ${unqualified}`;
+    }
+    
+    if (distChart) { distChart.destroy(); distChart = null; }
+    
+    distChart = new Chart(distCtx.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Qualified (500+ PV)', 'Unqualified (<500 PV)'],
+        datasets: [{
+          data: [qualified, unqualified],
+          backgroundColor: ['#2d6a2d', '#c25a00'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              padding: 10,
+              usePointStyle: true,
+              pointStyle: 'circle',
+              font: { size: 11 }
+            }
+          }
+        },
+        cutout: '65%'
+      }
+    });
+  }
+  
+  // --- 3. Commission Trend Chart ---
+  const commCtx = document.getElementById('commissionTrendChart');
+  if (commCtx) {
+    const commData = last7Days.map(date => 
+      DB.sales.filter(s => s.date === date).reduce((sum, s) => sum + (parseFloat(s.commission) || 0), 0)
+    );
+    
+    if (commissionChart) { commissionChart.destroy(); commissionChart = null; }
+    
+    commissionChart = new Chart(commCtx.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: salesLabels,
+        datasets: [{
+          label: 'Commission (KSh)',
+          data: commData,
+          backgroundColor: 'rgba(184,134,11,0.1)',
+          borderColor: '#b8860b',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.3,
+          pointBackgroundColor: '#b8860b',
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) { return 'KSh ' + value.toLocaleString(); }
+            }
+          }
+        }
+      }
+    });
+  }
+  
+  // --- 4. Top Products Chart ---
+  const prodCtx = document.getElementById('topProductsChart');
+  if (prodCtx) {
+    // Aggregate product sales
+    const productSales = {};
+    DB.sales.forEach(s => {
+      if (s.products) {
+        const products = s.products.split(',').map(p => p.trim());
+        products.forEach(p => {
+          if (p) {
+            productSales[p] = (productSales[p] || 0) + 1;
+          }
+        });
+      }
+    });
+    
+    const sortedProducts = Object.entries(productSales)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+    
+    const labels = sortedProducts.map(p => p[0].length > 15 ? p[0].substring(0, 15) + '...' : p[0]);
+    const data = sortedProducts.map(p => p[1]);
+    
+    if (productsChart) { productsChart.destroy(); productsChart = null; }
+    
+    productsChart = new Chart(prodCtx.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Sales Count',
+          data: data,
+          backgroundColor: [
+            'rgba(139,26,26,0.8)',
+            'rgba(184,134,11,0.8)',
+            'rgba(45,106,45,0.8)',
+            'rgba(24,95,165,0.8)',
+            'rgba(194,90,0,0.8)'
+          ],
+          borderColor: [
+            '#8B1A1A',
+            '#b8860b',
+            '#2d6a2d',
+            '#185FA5',
+            '#c25a00'
+          ],
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            ticks: { stepSize: 1 }
+          }
+        }
+      }
+    });
+  }
 }
 // ========= SEARCH =========
 function filterTable(tableId,q){
