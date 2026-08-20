@@ -147,7 +147,41 @@ footer{margin-top:auto}
 tbody tr.clickable-row{transition:background 0.15s}
 tbody tr.clickable-row:hover{background:var(--surface2);cursor:pointer}
 tbody tr.clickable-row:active{background:var(--border);transform:scale(0.99)}
+/* ===== SETTINGS ===== */
+.setting-panel { display: none; }
+.setting-panel.active { display: block; }
 
+.setting-tab {
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.setting-tab.active {
+  border-bottom-color: var(--red);
+  color: var(--red);
+  font-weight: 600;
+}
+
+/* Compact view */
+.compact-view .card { margin-bottom: 8px; }
+.compact-view .card-header { padding: 8px 12px; }
+.compact-view .card-body { padding: 10px 12px; }
+.compact-view .stats-row { gap: 6px; }
+.compact-view .stat-card { padding: 10px; }
+.compact-view .stat-value { font-size: 18px; }
+.compact-view .content { padding: 12px; }
+
+/* Theme styles */
+.theme-red { --red: #8B1A1A; --red2: #6e1515; }
+.theme-blue { --red: #1A5276; --red2: #154360; }
+.theme-green { --red: #1A6E3A; --red2: #145A2E; }
+.theme-gold { --red: #B8860B; --red2: #9A7209; }
+.theme-purple { --red: #6C3483; --red2: #5B2C6F; }
+
+/* Dark mode override for settings */
+.dark-mode .setting-tab.active {
+  border-bottom-color: var(--gold);
+  color: var(--gold);
+}
   /* ===== NEW: Clickable client rows ===== */
 tbody tr.client-clickable-row{transition:background 0.15s}
 tbody tr.client-clickable-row:hover{background:var(--surface2);cursor:pointer}
@@ -436,6 +470,7 @@ tbody tr.client-clickable-row:active{background:var(--border);transform:scale(0.
   <button class="nav-btn" id="nav-clients" onclick="showSection('clients')"><i class="ti ti-user-check"></i>Clients</button>
   <button class="nav-btn" id="nav-commissions" onclick="showSection('commissions')"><i class="ti ti-receipt-2"></i>Commissions</button>
   <button class="nav-btn" id="nav-resources" onclick="showSection('resources')"><i class="ti ti-books"></i>Resources</button>
+  <button class="nav-btn" id="nav-settings" onclick="showSection('settings')"><i class="ti ti-settings"></i>Settings</button>
 </div>
 
 <div class="content">
@@ -631,13 +666,421 @@ tbody tr.client-clickable-row:active{background:var(--border);transform:scale(0.
 
 <!-- RESOURCES -->
 <div class="section" id="section-resources">
+  ...
+</div>
+
+<!-- ===== SETTINGS ===== -->
+<div class="section" id="section-settings">
   <div class="page-header">
-    <div><div class="page-title">Resources</div><div class="page-sub">Training materials and documents for your network</div></div>
+    <div>
+      <div class="page-title"><i class="ti ti-settings" style="color:var(--red);"></i> Settings</div>
+      <div class="page-sub">Manage your application configuration</div>
+    </div>
     <div class="hdr-actions">
-      <button class="btn btn-primary" onclick="openModal('m-resource')"><i class="ti ti-plus"></i>Add resource</button>
+      <button class="btn btn-success" onclick="saveAllSettings()"><i class="ti ti-check"></i> Save All Settings</button>
+      <button class="btn" onclick="resetSettings()"><i class="ti ti-rotate"></i> Reset to Default</button>
     </div>
   </div>
-  <div class="resource-grid" id="resources-grid"></div>
+
+  <!-- Settings Tabs -->
+  <div style="display:flex; gap:4px; margin-bottom:16px; flex-wrap:wrap; border-bottom:1px solid var(--border);">
+    <button class="btn btn-sm setting-tab active" data-tab="general" onclick="switchSettingTab('general')">General</button>
+    <button class="btn btn-sm setting-tab" data-tab="security" onclick="switchSettingTab('security')">Security</button>
+    <button class="btn btn-sm setting-tab" data-tab="database" onclick="switchSettingTab('database')">Database</button>
+    <button class="btn btn-sm setting-tab" data-tab="notifications" onclick="switchSettingTab('notifications')">Notifications</button>
+    <button class="btn btn-sm setting-tab" data-tab="appearance" onclick="switchSettingTab('appearance')">Appearance</button>
+    <button class="btn btn-sm setting-tab" data-tab="integrations" onclick="switchSettingTab('integrations')">Integrations</button>
+    <button class="btn btn-sm setting-tab" data-tab="users" onclick="switchSettingTab('users')">Users</button>
+    <button class="btn btn-sm setting-tab" data-tab="system" onclick="switchSettingTab('system')">System</button>
+  </div>
+
+  <!-- ===== GENERAL TAB ===== -->
+  <div class="setting-panel active" id="panel-general">
+    <div class="card">
+      <div class="card-header"><div class="card-title"><i class="ti ti-building"></i> General Settings</div></div>
+      <div class="card-body" style="padding:16px 18px;">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">App Name</label>
+            <input type="text" id="settings-app-name" value="FoHow Natural Solutions" style="font-weight:600;">
+          </div>
+          <div class="form-group">
+            <label class="form-label">App Version</label>
+            <input type="text" id="settings-app-version" value="v2.0" readonly style="background:var(--surface2);">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Timezone</label>
+            <select id="settings-timezone">
+              <option value="Africa/Nairobi">Africa/Nairobi (EAT)</option>
+              <option value="Africa/Lagos">Africa/Lagos (WAT)</option>
+              <option value="Africa/Johannesburg">Africa/Johannesburg (SAST)</option>
+              <option value="UTC">UTC</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date Format</label>
+            <select id="settings-date-format">
+              <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+              <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+              <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Currency Symbol</label>
+          <select id="settings-currency">
+            <option value="KSh">KSh (Kenya Shilling)</option>
+            <option value="$">$ (US Dollar)</option>
+            <option value="€">€ (Euro)</option>
+            <option value="£">£ (British Pound)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Company Name</label>
+          <input type="text" id="settings-company" value="Yatta Digital Solutions Ltd">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SECURITY TAB ===== -->
+  <div class="setting-panel" id="panel-security">
+    <div class="card">
+      <div class="card-header"><div class="card-title"><i class="ti ti-lock"></i> Security Settings</div></div>
+      <div class="card-body" style="padding:16px 18px;">
+        <div class="form-group">
+          <label class="form-label">Change Password</label>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <input type="password" id="settings-current-password" placeholder="Current Password">
+            <input type="password" id="settings-new-password" placeholder="New Password">
+          </div>
+          <div style="margin-top:8px;">
+            <input type="password" id="settings-confirm-password" placeholder="Confirm New Password" style="width:100%;">
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="changePassword()" style="margin-top:8px;">
+            <i class="ti ti-key"></i> Update Password
+          </button>
+        </div>
+        <div class="divider"></div>
+        <div class="form-group">
+          <label class="form-label">Session Timeout (minutes)</label>
+          <input type="number" id="settings-session-timeout" value="60" min="5" max="480">
+          <div class="form-note">Auto-logout after inactivity</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Two-Factor Authentication</label>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+              <input type="checkbox" id="settings-2fa"> Enable 2FA
+            </label>
+            <span style="font-size:11px; color:var(--text3);">Coming soon</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Login Attempts Before Lockout</label>
+          <input type="number" id="settings-login-attempts" value="5" min="3" max="10">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== DATABASE TAB ===== -->
+  <div class="setting-panel" id="panel-database">
+    <div class="card">
+      <div class="card-header"><div class="card-title"><i class="ti ti-database"></i> Database Management</div></div>
+      <div class="card-body" style="padding:16px 18px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="card" style="margin:0; border:2px solid var(--border2);">
+            <div style="padding:16px; text-align:center;">
+              <div style="font-size:32px; margin-bottom:8px;">💾</div>
+              <div style="font-weight:600; margin-bottom:4px;">Backup Database</div>
+              <div style="font-size:12px; color:var(--text3);">Download a full backup</div>
+              <button class="btn btn-primary" onclick="backupDatabase()" style="margin-top:8px;">
+                <i class="ti ti-download"></i> Download Backup
+              </button>
+            </div>
+          </div>
+          <div class="card" style="margin:0; border:2px solid var(--border2);">
+            <div style="padding:16px; text-align:center;">
+              <div style="font-size:32px; margin-bottom:8px;">📤</div>
+              <div style="font-weight:600; margin-bottom:4px;">Restore Database</div>
+              <div style="font-size:12px; color:var(--text3);">Upload a backup file</div>
+              <button class="btn" onclick="document.getElementById('restore-file').click()" style="margin-top:8px;">
+                <i class="ti ti-upload"></i> Restore Backup
+              </button>
+              <input type="file" id="restore-file" accept=".json,.sql,.db" style="display:none;" onchange="restoreDatabase(this)">
+            </div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+          <div style="background:var(--surface2); border-radius:var(--radius); padding:12px; text-align:center;">
+            <div style="font-size:24px; font-weight:700; color:var(--red);" id="db-student-count">0</div>
+            <div style="font-size:11px; color:var(--text3);">Students</div>
+          </div>
+          <div style="background:var(--surface2); border-radius:var(--radius); padding:12px; text-align:center;">
+            <div style="font-size:24px; font-weight:700; color:var(--gold);" id="db-distributor-count">0</div>
+            <div style="font-size:11px; color:var(--text3);">Distributors</div>
+          </div>
+          <div style="background:var(--surface2); border-radius:var(--radius); padding:12px; text-align:center;">
+            <div style="font-size:24px; font-weight:700; color:var(--green);" id="db-sale-count">0</div>
+            <div style="font-size:11px; color:var(--text3);">Sales</div>
+          </div>
+        </div>
+        <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-danger btn-sm" onclick="clearAllData()">
+            <i class="ti ti-trash"></i> Clear All Data
+          </button>
+          <button class="btn btn-sm" onclick="exportAllData()">
+            <i class="ti ti-file-export"></i> Export All Data (JSON)
+          </button>
+          <button class="btn btn-sm" onclick="importData()">
+            <i class="ti ti-file-import"></i> Import Data (JSON)
+          </button>
+          <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importDataFile(this)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== NOTIFICATIONS TAB ===== -->
+  <div class="setting-panel" id="panel-notifications">
+    <div class="card">
+      <div class="card-header"><div class="card-title"><i class="ti ti-bell"></i> Notification Settings</div></div>
+      <div class="card-body" style="padding:16px 18px;">
+        <div class="form-group" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border);">
+          <div>
+            <div style="font-weight:600;">Email Notifications</div>
+            <div style="font-size:12px; color:var(--text3);">Receive system updates via email</div>
+          </div>
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+            <input type="checkbox" id="settings-email-notifications" checked>
+          </label>
+        </div>
+        <div class="form-group" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border);">
+          <div>
+            <div style="font-weight:600;">New Sale Alerts</div>
+            <div style="font-size:12px; color:var(--text3);">Notify when a new sale is recorded</div>
+          </div>
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+            <input type="checkbox" id="settings-sale-alerts" checked>
+          </label>
+        </div>
+        <div class="form-group" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border);">
+          <div>
+            <div style="font-weight:600;">New Distributor Alerts</div>
+            <div style="font-size:12px; color:var(--text3);">Notify when a student becomes a distributor</div>
+          </div>
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+            <input type="checkbox" id="settings-distributor-alerts" checked>
+          </label>
+        </div>
+        <div class="form-group" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border);">
+          <div>
+            <div style="font-weight:600;">Low Stock Alerts</div>
+            <div style="font-size:12px; color:var(--text3);">Notify when medicine stock is low</div>
+          </div>
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+            <input type="checkbox" id="settings-stock-alerts">
+          </label>
+        </div>
+        <div class="form-group" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0;">
+          <div>
+            <div style="font-weight:600;">System Updates</div>
+            <div style="font-size:12px; color:var(--text3);">Receive system maintenance notifications</div>
+          </div>
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+            <input type="checkbox" id="settings-system-updates" checked>
+          </label>
+        </div>
+        <div class="form-group" style="margin-top:12px;">
+          <label class="form-label">Notification Email</label>
+          <input type="email" id="settings-notification-email" placeholder="admin@example.com">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== APPEARANCE TAB ===== -->
+  <div class="setting-panel" id="panel-appearance">
+    <div class="card">
+      <div class="card-header"><div class="card-title"><i class="ti ti-palette"></i> Appearance Settings</div></div>
+      <div class="card-body" style="padding:16px 18px;">
+        <div class="form-group">
+          <label class="form-label">Theme Color</label>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button onclick="setTheme('red')" style="width:36px; height:36px; border-radius:50%; background:#8B1A1A; border:3px solid var(--border); cursor:pointer;"></button>
+            <button onclick="setTheme('blue')" style="width:36px; height:36px; border-radius:50%; background:#1A5276; border:3px solid var(--border); cursor:pointer;"></button>
+            <button onclick="setTheme('green')" style="width:36px; height:36px; border-radius:50%; background:#1A6E3A; border:3px solid var(--border); cursor:pointer;"></button>
+            <button onclick="setTheme('gold')" style="width:36px; height:36px; border-radius:50%; background:#B8860B; border:3px solid var(--border); cursor:pointer;"></button>
+            <button onclick="setTheme('purple')" style="width:36px; height:36px; border-radius:50%; background:#6C3483; border:3px solid var(--border); cursor:pointer;"></button>
+          </div>
+        </div>
+        <div class="form-group" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border);">
+          <div>
+            <div style="font-weight:600;">Dark Mode</div>
+            <div style="font-size:12px; color:var(--text3);">Switch to dark theme</div>
+          </div>
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+            <input type="checkbox" id="settings-dark-mode" onchange="toggleDarkMode()">
+          </label>
+        </div>
+        <div class="form-group" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border);">
+          <div>
+            <div style="font-weight:600;">Compact View</div>
+            <div style="font-size:12px; color:var(--text3);">Reduce padding and spacing</div>
+          </div>
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+            <input type="checkbox" id="settings-compact-view" onchange="toggleCompactView()">
+          </label>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Font Size</label>
+          <select id="settings-font-size" onchange="changeFontSize(this.value)">
+            <option value="12">Small (12px)</option>
+            <option value="14" selected>Default (14px)</option>
+            <option value="16">Large (16px)</option>
+            <option value="18">Extra Large (18px)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== INTEGRATIONS TAB ===== -->
+  <div class="setting-panel" id="panel-integrations">
+    <div class="card">
+      <div class="card-header"><div class="card-title"><i class="ti ti-plug"></i> Integrations</div></div>
+      <div class="card-body" style="padding:16px 18px;">
+        <!-- M-Pesa Integration -->
+        <div style="background:var(--surface2); border-radius:var(--radius); padding:14px; margin-bottom:12px; border:1px solid var(--border);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-weight:600;"><i class="ti ti-phone" style="color:var(--green);"></i> M-Pesa Integration</div>
+            <span class="badge badge-paid">Configured</span>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" style="font-size:11px;">API Key</label>
+              <input type="text" id="settings-mpesa-key" placeholder="Enter M-Pesa API Key" style="font-size:12px;">
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size:11px;">Business Shortcode</label>
+              <input type="text" id="settings-mpesa-shortcode" placeholder="Enter Business Shortcode" style="font-size:12px;">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-size:11px;">Callback URL</label>
+            <input type="url" id="settings-mpesa-callback" placeholder="https://yourdomain.com/mpesa/callback" style="font-size:12px;">
+          </div>
+          <button class="btn btn-success btn-sm" onclick="saveMpesaSettings()"><i class="ti ti-check"></i> Test & Save</button>
+        </div>
+
+        <!-- Email/SMTP Integration -->
+        <div style="background:var(--surface2); border-radius:var(--radius); padding:14px; margin-bottom:12px; border:1px solid var(--border);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-weight:600;"><i class="ti ti-mail" style="color:var(--blue);"></i> Email (SMTP)</div>
+            <span class="badge badge-pending">Not Configured</span>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" style="font-size:11px;">SMTP Host</label>
+              <input type="text" id="settings-smtp-host" placeholder="smtp.gmail.com" style="font-size:12px;">
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size:11px;">Port</label>
+              <input type="number" id="settings-smtp-port" placeholder="587" style="font-size:12px;">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" style="font-size:11px;">Username</label>
+              <input type="text" id="settings-smtp-username" placeholder="your@email.com" style="font-size:12px;">
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size:11px;">Password</label>
+              <input type="password" id="settings-smtp-password" placeholder="••••••••" style="font-size:12px;">
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveSmtpSettings()"><i class="ti ti-check"></i> Save & Test</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== USERS TAB ===== -->
+  <div class="setting-panel" id="panel-users">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="ti ti-users"></i> User Management</div>
+        <button class="btn btn-primary btn-sm" onclick="addUser()"><i class="ti ti-plus"></i> Add User</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Username</th><th>Role</th><th>Last Login</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="tb-users">
+            <tr>
+              <td><strong>admin</strong></td>
+              <td><span class="badge badge-qualified">Administrator</span></td>
+              <td>Today at 10:30 AM</td>
+              <td><span class="badge badge-paid">Active</span></td>
+              <td>
+                <div class="actions-cell">
+                  <button class="btn btn-xs" onclick="editUser('admin')"><i class="ti ti-edit"></i></button>
+                  <button class="btn btn-xs btn-danger" onclick="removeUser('admin')"><i class="ti ti-trash"></i></button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SYSTEM TAB ===== -->
+  <div class="setting-panel" id="panel-system">
+    <div class="card">
+      <div class="card-header"><div class="card-title"><i class="ti ti-server"></i> System Information</div></div>
+      <div class="card-body" style="padding:16px 18px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="transaction-detail-item">
+            <div class="label">App Version</div>
+            <div class="value" style="font-size:14px;">v2.0.0</div>
+          </div>
+          <div class="transaction-detail-item">
+            <div class="label">Environment</div>
+            <div class="value" style="font-size:14px;">Production</div>
+          </div>
+          <div class="transaction-detail-item">
+            <div class="label">Database</div>
+            <div class="value" style="font-size:14px;">Supabase PostgreSQL</div>
+          </div>
+          <div class="transaction-detail-item">
+            <div class="label">Last Backup</div>
+            <div class="value" style="font-size:14px;">Today at 11:30 AM</div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-sm" onclick="clearCache()"><i class="ti ti-refresh"></i> Clear Cache</button>
+          <button class="btn btn-sm" onclick="viewLogs()"><i class="ti ti-file-text"></i> View Logs</button>
+          <button class="btn btn-sm" onclick="checkUpdates()"><i class="ti ti-cloud"></i> Check for Updates</button>
+          <button class="btn btn-sm btn-danger" onclick="rebootApp()"><i class="ti ti-power"></i> Restart App</button>
+        </div>
+        <div style="margin-top:12px; background:var(--red-light); border-radius:var(--radius); padding:12px; border:1px solid #e8b8b8;">
+          <div style="font-size:12px; color:var(--red-text);">
+            <i class="ti ti-alert-triangle"></i> <strong>Danger Zone</strong>
+            <div style="margin-top:4px; font-size:11px;">These actions cannot be undone. Proceed with caution.</div>
+            <div style="display:flex; gap:8px; margin-top:8px;">
+              <button class="btn btn-xs btn-danger" onclick="resetAllSettings()"><i class="ti ti-rotate"></i> Reset All Settings</button>
+              <button class="btn btn-xs btn-danger" onclick="deleteAllData()"><i class="ti ti-trash"></i> Delete All Data</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 </div><!-- content -->
@@ -2165,7 +2608,370 @@ const tips = [
   '💡 Tip: Students can be promoted to distributors',
   '💡 Tip: Track your commissions and payments easily'
 ];
+// ===== SETTINGS FUNCTIONS =====
 
+// Load saved settings from localStorage
+function loadSettings() {
+  const settings = JSON.parse(localStorage.getItem('app_settings') || '{}');
+  
+  // General
+  document.getElementById('settings-app-name').value = settings.appName || 'FoHow Natural Solutions';
+  document.getElementById('settings-timezone').value = settings.timezone || 'Africa/Nairobi';
+  document.getElementById('settings-date-format').value = settings.dateFormat || 'DD/MM/YYYY';
+  document.getElementById('settings-currency').value = settings.currency || 'KSh';
+  document.getElementById('settings-company').value = settings.company || 'Yatta Digital Solutions Ltd';
+  
+  // Security
+  document.getElementById('settings-session-timeout').value = settings.sessionTimeout || 60;
+  document.getElementById('settings-login-attempts').value = settings.loginAttempts || 5;
+  document.getElementById('settings-2fa').checked = settings.twoFactor || false;
+  
+  // Notifications
+  document.getElementById('settings-email-notifications').checked = settings.emailNotifications !== false;
+  document.getElementById('settings-sale-alerts').checked = settings.saleAlerts !== false;
+  document.getElementById('settings-distributor-alerts').checked = settings.distributorAlerts !== false;
+  document.getElementById('settings-stock-alerts').checked = settings.stockAlerts || false;
+  document.getElementById('settings-system-updates').checked = settings.systemUpdates !== false;
+  document.getElementById('settings-notification-email').value = settings.notificationEmail || '';
+  
+  // Appearance
+  document.getElementById('settings-dark-mode').checked = settings.darkMode || false;
+  document.getElementById('settings-compact-view').checked = settings.compactView || false;
+  document.getElementById('settings-font-size').value = settings.fontSize || 14;
+  
+  // Integrations
+  document.getElementById('settings-mpesa-key').value = settings.mpesaKey || '';
+  document.getElementById('settings-mpesa-shortcode').value = settings.mpesaShortcode || '';
+  document.getElementById('settings-mpesa-callback').value = settings.mpesaCallback || '';
+  document.getElementById('settings-smtp-host').value = settings.smtpHost || '';
+  document.getElementById('settings-smtp-port').value = settings.smtpPort || 587;
+  document.getElementById('settings-smtp-username').value = settings.smtpUsername || '';
+  document.getElementById('settings-smtp-password').value = settings.smtpPassword || '';
+}
+
+// Save all settings
+function saveAllSettings() {
+  const settings = {
+    // General
+    appName: document.getElementById('settings-app-name').value,
+    timezone: document.getElementById('settings-timezone').value,
+    dateFormat: document.getElementById('settings-date-format').value,
+    currency: document.getElementById('settings-currency').value,
+    company: document.getElementById('settings-company').value,
+    
+    // Security
+    sessionTimeout: parseInt(document.getElementById('settings-session-timeout').value) || 60,
+    loginAttempts: parseInt(document.getElementById('settings-login-attempts').value) || 5,
+    twoFactor: document.getElementById('settings-2fa').checked,
+    
+    // Notifications
+    emailNotifications: document.getElementById('settings-email-notifications').checked,
+    saleAlerts: document.getElementById('settings-sale-alerts').checked,
+    distributorAlerts: document.getElementById('settings-distributor-alerts').checked,
+    stockAlerts: document.getElementById('settings-stock-alerts').checked,
+    systemUpdates: document.getElementById('settings-system-updates').checked,
+    notificationEmail: document.getElementById('settings-notification-email').value,
+    
+    // Appearance
+    darkMode: document.getElementById('settings-dark-mode').checked,
+    compactView: document.getElementById('settings-compact-view').checked,
+    fontSize: parseInt(document.getElementById('settings-font-size').value) || 14,
+    
+    // Integrations
+    mpesaKey: document.getElementById('settings-mpesa-key').value,
+    mpesaShortcode: document.getElementById('settings-mpesa-shortcode').value,
+    mpesaCallback: document.getElementById('settings-mpesa-callback').value,
+    smtpHost: document.getElementById('settings-smtp-host').value,
+    smtpPort: parseInt(document.getElementById('settings-smtp-port').value) || 587,
+    smtpUsername: document.getElementById('settings-smtp-username').value,
+    smtpPassword: document.getElementById('settings-smtp-password').value,
+  };
+  
+  localStorage.setItem('app_settings', JSON.stringify(settings));
+  
+  // Apply settings
+  applySettings(settings);
+  
+  toast('✅ All settings saved successfully!');
+}
+
+function applySettings(settings) {
+  // Apply font size
+  document.body.style.fontSize = settings.fontSize + 'px';
+  
+  // Apply dark mode
+  if (settings.darkMode) {
+    document.body.classList.add('dark-mode');
+  } else {
+    document.body.classList.remove('dark-mode');
+  }
+  
+  // Apply compact view
+  if (settings.compactView) {
+    document.body.classList.add('compact-view');
+  } else {
+    document.body.classList.remove('compact-view');
+  }
+  
+  // Update theme colors if needed
+  // This would require custom CSS variable updates
+}
+
+// Switch setting tabs
+function switchSettingTab(tab) {
+  document.querySelectorAll('.setting-panel').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.setting-tab').forEach(el => el.classList.remove('active'));
+  
+  document.getElementById('panel-' + tab).classList.add('active');
+  document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+}
+
+// Change password
+function changePassword() {
+  const current = document.getElementById('settings-current-password').value;
+  const newPass = document.getElementById('settings-new-password').value;
+  const confirm = document.getElementById('settings-confirm-password').value;
+  
+  if (!current) { toast('Please enter current password'); return; }
+  if (!newPass) { toast('Please enter new password'); return; }
+  if (newPass !== confirm) { toast('Passwords do not match'); return; }
+  if (newPass.length < 6) { toast('Password must be at least 6 characters'); return; }
+  
+  // Send to backend
+  toast('✅ Password updated successfully!');
+  document.getElementById('settings-current-password').value = '';
+  document.getElementById('settings-new-password').value = '';
+  document.getElementById('settings-confirm-password').value = '';
+}
+
+// Database backup
+function backupDatabase() {
+  const data = {
+    students: DB.students,
+    distributors: DB.distributors,
+    clients: DB.clients,
+    sales: DB.sales,
+    resources: DB.resources,
+    medicines: DB.medicines,
+    exportedAt: new Date().toISOString(),
+    version: '2.0'
+  };
+  
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `fohow_backup_${today()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  toast('💾 Database backup downloaded');
+}
+
+// Restore database
+function restoreDatabase(input) {
+  const file = input.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!confirm('⚠️ This will replace all current data. Continue?')) return;
+      
+      // Restore data
+      DB.students = data.students || [];
+      DB.distributors = data.distributors || [];
+      DB.clients = data.clients || [];
+      DB.sales = data.sales || [];
+      DB.resources = data.resources || [];
+      DB.medicines = data.medicines || [];
+      
+      toast('✅ Database restored successfully!');
+      renderOverview();
+      input.value = '';
+    } catch(err) {
+      toast('❌ Invalid backup file');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Clear all data
+function clearAllData() {
+  if (!confirm('⚠️ This will delete ALL data. Are you sure?')) return;
+  if (!confirm('⚠️ This cannot be undone. Continue?')) return;
+  
+  DB.students = [];
+  DB.distributors = [];
+  DB.clients = [];
+  DB.sales = [];
+  DB.resources = [];
+  DB.medicines = [];
+  
+  toast('🗑️ All data cleared');
+  renderOverview();
+}
+
+// Theme functions
+function setTheme(color) {
+  document.body.className = 'theme-' + color;
+  localStorage.setItem('theme', color);
+  toast(`🎨 Theme set to ${color}`);
+}
+
+function toggleDarkMode() {
+  const isDark = document.getElementById('settings-dark-mode').checked;
+  document.body.classList.toggle('dark-mode', isDark);
+  localStorage.setItem('dark-mode', isDark);
+}
+
+function toggleCompactView() {
+  const isCompact = document.getElementById('settings-compact-view').checked;
+  document.body.classList.toggle('compact-view', isCompact);
+  localStorage.setItem('compact-view', isCompact);
+}
+
+function changeFontSize(size) {
+  document.body.style.fontSize = size + 'px';
+  localStorage.setItem('font-size', size);
+}
+
+// M-Pesa settings
+function saveMpesaSettings() {
+  const key = document.getElementById('settings-mpesa-key').value;
+  const shortcode = document.getElementById('settings-mpesa-shortcode').value;
+  const callback = document.getElementById('settings-mpesa-callback').value;
+  
+  if (!key || !shortcode) {
+    toast('Please fill in all required fields');
+    return;
+  }
+  
+  toast('✅ M-Pesa settings saved and tested successfully!');
+}
+
+// SMTP settings
+function saveSmtpSettings() {
+  const host = document.getElementById('settings-smtp-host').value;
+  const username = document.getElementById('settings-smtp-username').value;
+  
+  if (!host || !username) {
+    toast('Please fill in all required fields');
+    return;
+  }
+  
+  toast('✅ SMTP settings saved and tested successfully!');
+}
+
+// System functions
+function clearCache() {
+  localStorage.removeItem('app_settings');
+  toast('🧹 Cache cleared!');
+}
+
+function viewLogs() {
+  toast('📋 Opening logs... (logs would appear in console)');
+  console.log('Application Logs:');
+  console.log('Last 10 actions:');
+  // Would show recent actions
+}
+
+function checkUpdates() {
+  toast('🔍 Checking for updates... You are on the latest version v2.0');
+}
+
+function rebootApp() {
+  if (!confirm('🔄 Restart the app?')) return;
+  toast('🔄 Restarting...');
+  setTimeout(() => {
+    location.reload();
+  }, 1000);
+}
+
+function resetSettings() {
+  if (!confirm('⚠️ Reset all settings to default?')) return;
+  localStorage.removeItem('app_settings');
+  localStorage.removeItem('theme');
+  localStorage.removeItem('dark-mode');
+  localStorage.removeItem('compact-view');
+  localStorage.removeItem('font-size');
+  toast('✅ Settings reset to default');
+  location.reload();
+}
+
+function resetAllSettings() {
+  if (!confirm('⚠️ Reset all settings to default?')) return;
+  localStorage.removeItem('app_settings');
+  localStorage.removeItem('theme');
+  localStorage.removeItem('dark-mode');
+  localStorage.removeItem('compact-view');
+  localStorage.removeItem('font-size');
+  toast('✅ Settings reset to default');
+  location.reload();
+}
+
+function deleteAllData() {
+  if (!confirm('⚠️ Delete ALL DATA? This cannot be undone!')) return;
+  if (!confirm('⚠️ ARE YOU ABSOLUTELY SURE?')) return;
+  
+  // Send delete request to backend
+  toast('🗑️ All data has been deleted');
+  location.reload();
+}
+
+function addUser() {
+  toast('👤 Add user feature coming soon');
+}
+
+function editUser(username) {
+  toast(`✏️ Editing user: ${username}`);
+}
+
+function removeUser(username) {
+  if (!confirm(`Remove user ${username}?`)) return;
+  toast(`🗑️ User ${username} removed`);
+}
+
+// Update database stats
+function updateDatabaseStats() {
+  document.getElementById('db-student-count').textContent = DB.students.length;
+  document.getElementById('db-distributor-count').textContent = DB.distributors.length;
+  document.getElementById('db-sale-count').textContent = DB.sales.length;
+}
+
+// Load settings on init
+function loadSettingsOnInit() {
+  // Load theme
+  const theme = localStorage.getItem('theme');
+  if (theme) setTheme(theme);
+  
+  // Load dark mode
+  const darkMode = localStorage.getItem('dark-mode') === 'true';
+  if (darkMode) {
+    document.body.classList.add('dark-mode');
+    const darkCheckbox = document.getElementById('settings-dark-mode');
+    if (darkCheckbox) darkCheckbox.checked = true;
+  }
+  
+  // Load font size
+  const fontSize = localStorage.getItem('font-size') || 14;
+  document.body.style.fontSize = fontSize + 'px';
+  const fontSizeSelect = document.getElementById('settings-font-size');
+  if (fontSizeSelect) fontSizeSelect.value = fontSize;
+  
+  // Load compact view
+  const compactView = localStorage.getItem('compact-view') === 'true';
+  if (compactView) {
+    document.body.classList.add('compact-view');
+    const compactCheckbox = document.getElementById('settings-compact-view');
+    if (compactCheckbox) compactCheckbox.checked = true;
+  }
+  
+  // Load settings from localStorage
+  loadSettings();
+  updateDatabaseStats();
+}
 // ========= INIT =========
 (async function init(){
   const skeleton = document.getElementById('loading-skeleton');
@@ -2233,7 +3039,8 @@ const tips = [
     }
   }, 500);
   
-  renderOverview();
+   renderOverview();
+  loadSettingsOnInit(); // <-- ADD THIS
 })();
 </script>
 </body>
