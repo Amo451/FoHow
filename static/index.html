@@ -310,6 +310,26 @@ tbody tr.client-clickable-row:active{background:var(--border);transform:scale(0.
   height: 30px;
   background: rgba(245,230,163,0.3);
 }
+/* ===== CLICKABLE STAT CARDS ===== */
+.clickable-stat {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.clickable-stat:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1) !important;
+  border-color: var(--red) !important;
+}
+.clickable-stat:hover .ti-arrow-right {
+  opacity: 1 !important;
+  transform: translateX(3px);
+  transition: all 0.3s ease;
+}
+.clickable-stat .ti-arrow-right {
+  display: inline-block;
+  transition: all 0.3s ease;
+  opacity: 0.5;
+}
 </style>
 </head>
 <body>
@@ -1742,7 +1762,6 @@ function renderResources(){
     </div>`).join('');
 }
 
-// ========= OVERVIEW =========
 function renderOverview(){
   const totComm = DB.sales.reduce((a,s) => a + (+s.commission || 0), 0);
   const pending = DB.sales.filter(s => !s.paid).reduce((a,s) => a + (+s.commission || 0), 0);
@@ -1762,13 +1781,34 @@ function renderOverview(){
     }, 150);
   }
   
-  // Update stats
+  // Update stats - NOW CLICKABLE
   document.getElementById('ov-stats').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Students</div><div class="stat-value">${DB.students.length}</div><div class="stat-sub">Learning the network</div></div>
-    <div class="stat-card"><div class="stat-label">Distributors</div><div class="stat-value">${DB.distributors.length}</div><div class="stat-sub">Active referrers</div></div>
-    <div class="stat-card"><div class="stat-label">Clients</div><div class="stat-value">${DB.clients.length}</div><div class="stat-sub">Medicine buyers</div></div>
-    <div class="stat-card"><div class="stat-label">Total sales</div><div class="stat-value">${DB.sales.length}</div></div>
-    <div class="stat-card"><div class="stat-label">Commission earned</div><div class="stat-value" style="font-size:17px">${fmtKsh(totComm)}</div><div class="stat-sub" style="color:var(--orange)">${fmtKsh(pending)} pending</div></div>`;
+    <div class="stat-card clickable-stat" onclick="showSection('students')">
+      <div class="stat-label">Students</div>
+      <div class="stat-value">${DB.students.length}</div>
+      <div class="stat-sub">Learning the network <i class="ti ti-arrow-right"></i></div>
+    </div>
+    <div class="stat-card clickable-stat" onclick="showSection('distributors')">
+      <div class="stat-label">Distributors</div>
+      <div class="stat-value">${DB.distributors.length}</div>
+      <div class="stat-sub">Active referrers <i class="ti ti-arrow-right"></i></div>
+    </div>
+    <div class="stat-card clickable-stat" onclick="showSection('clients')">
+      <div class="stat-label">Clients</div>
+      <div class="stat-value">${DB.clients.length}</div>
+      <div class="stat-sub">Medicine buyers <i class="ti ti-arrow-right"></i></div>
+    </div>
+    <div class="stat-card clickable-stat" onclick="showSection('commissions')">
+      <div class="stat-label">Total sales</div>
+      <div class="stat-value">${DB.sales.length}</div>
+      <div class="stat-sub">View all sales <i class="ti ti-arrow-right"></i></div>
+    </div>
+    <div class="stat-card" style="cursor:default;">
+      <div class="stat-label">Commission earned</div>
+      <div class="stat-value" style="font-size:17px">${fmtKsh(totComm)}</div>
+      <div class="stat-sub" style="color:var(--orange)">${fmtKsh(pending)} pending</div>
+    </div>
+  `;
   
   const recent = [...DB.sales].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,6);
   document.getElementById('ov-recent').innerHTML = recent.length ? recent.map(s => `
@@ -1789,7 +1829,6 @@ function renderOverview(){
     </div>
   `).join('') : '<p style="padding:12px 0;color:var(--text3);font-size:13px">No distributors yet.</p>';
 }
-
 // ========= SEARCH =========
 function filterTable(tableId,q){
   q=q.toLowerCase();
