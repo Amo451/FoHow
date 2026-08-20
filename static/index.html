@@ -1472,14 +1472,26 @@ async function api(path,opts){
   if(!res.ok){throw new Error((body&&body.error)||'Request failed');}
   return body;
 }
-async function loadAll(){
-  const data=await api('/all');
-  DB.students=data.students||[];
-  DB.distributors=data.distributors||[];
-  DB.clients=data.clients||[];
-  DB.sales=data.sales||[];
-  DB.resources=data.resources||[];
-  DB.medicines=data.medicines||[];
+let lastLoadTime = 0;
+let cachedData = null;
+
+async function loadAll(forceRefresh = false) {
+    // Don't reload if less than 5 seconds since last load
+    const now = Date.now();
+    if (!forceRefresh && cachedData && (now - lastLoadTime) < 5000) {
+        return;
+    }
+    
+    const data = await api('/all');
+    DB.students = data.students || [];
+    DB.distributors = data.distributors || [];
+    DB.clients = data.clients || [];
+    DB.sales = data.sales || [];
+    DB.resources = data.resources || [];
+    DB.medicines = data.medicines || [];
+    
+    cachedData = data;
+    lastLoadTime = now;
 }
 function today(){return new Date().toISOString().slice(0,10)}
 function fmtDate(d){if(!d)return '—';try{return new Date(d+'T00:00:00').toLocaleDateString('en-KE',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return d}}
@@ -1507,7 +1519,26 @@ function checkAutoPromote(d,silent=false){
   }
   return false;
 }
+// ========= PERFORMANCE OPTIMIZATIONS =========
+// Batch DOM updates using requestAnimationFrame
+function batchUpdate(callback) {
+    requestAnimationFrame(() => {
+        callback();
+    });
+}
 
+// Debounce function for any rapid-fire events
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
 // ========= NAV =========
 function showSection(s){
   document.querySelectorAll('.section').forEach(e=>e.classList.remove('active'));
@@ -2199,9 +2230,19 @@ async function saveSale(){
   document.getElementById('new-client-fields').style.display = 'none';
   ['sl-new-client-name','sl-new-client-phone','sl-new-client-location'].forEach(id=>sv(id,''));
   
-  await loadAll();
+    // Only reload sales and distributors (students and clients didn't change unless new client added)
+  const data = await api('/all');
+  DB.sales = data.sales || [];
+  DB.distributors = data.distributors || [];
+  // If a new client was added, also reload clients
+  if (clientId === '__NEW__') {
+      DB.clients = data.clients || [];
+  }
+  // Clear cache so stats recalculate
+  statsCache.data = null;
+  
   renderComm();
-  renderDist(); // Refresh distributor list to show updated points
+  renderDist();
   toast('Sale recorded with ' + totalPoints + ' PV points awarded');
 }
 function openPayModal(id){
@@ -2285,14 +2326,41 @@ function renderResources(){
       </div>
     </div>`).join('');
 }
+// ===== PERFORMANCE: Cached Stats =====
+const statsCache = {
+    distributors: null,
+    sales: null,
+    data: null
+};
 
+function getCachedStats() {
+    const distKey = DB.distributors.length + '_' + DB.distributors.reduce((s, d) => s + (d.points || 0), 0);
+    const saleKey = DB.sales.length + '_' + DB.sales.reduce((s, d) => s + (d.commission || 0), 0);
+    
+    if (statsCache.distributors === distKey && statsCache.sales === saleKey && statsCache.data) {
+        return statsCache.data;
+    }
+    
+    statsCache.distributors = distKey;
+    statsCache.sales = saleKey;
+    statsCache.data = {
+        totComm: DB.sales.reduce((a, s) => a + (+s.commission || 0), 0),
+        pending: DB.sales.filter(s => !s.paid).reduce((a, s) => a + (+s.commission || 0), 0),
+        totalSales: DB.sales.length,
+        qualifiedCount: DB.distributors.filter(d => d.qualified).length,
+        totalPoints: DB.distributors.reduce((a, d) => a + (d.points || 0), 0)
+    };
+    return statsCache.data;
+}
 function renderOverview(){
-  const totComm = DB.sales.reduce((a,s) => a + (+s.commission || 0), 0);
-  const pending = DB.sales.filter(s => !s.paid).reduce((a,s) => a + (+s.commission || 0), 0);
+  // Use cached stats for better performance
+  const stats = getCachedStats();
+  const totComm = stats.totComm;
+  const pending = stats.pending;
   
   // Update welcome banner
   const totalNetwork = DB.students.length + DB.distributors.length + DB.clients.length;
-  const totalSales = DB.sales.length;
+  const totalSales = stats.totalSales;
   document.getElementById('welcome-total').textContent = totalNetwork;
   document.getElementById('welcome-sales').textContent = totalSales;
   document.getElementById('welcome-commission').textContent = fmtKsh(totComm);
@@ -2353,8 +2421,11 @@ function renderOverview(){
     </div>
   `).join('') : '<p style="padding:12px 0;color:var(--text3);font-size:13px">No distributors yet.</p>';
   
-  // Render charts
-  setTimeout(renderCharts, 200);
+   // Only render charts if overview section is active
+  if (document.getElementById('section-overview').classList.contains('active')) {
+      // Render charts with a small delay
+      setTimeout(renderCharts, 200);
+  }
 }
   // ===== CHARTS =====
 let salesChart = null;
@@ -2363,6 +2434,18 @@ let commissionChart = null;
 let productsChart = null;
 
 function renderCharts() {
+  // ===== DESTROY ALL EXISTING CHARTS FIRST =====
+  if (salesChart) { salesChart.destroy(); salesChart = null; }
+  if (distChart) { distChart.destroy(); distChart = null; }
+  if (commissionChart) { commissionChart.destroy(); commissionChart = null; }
+  if (productsChart) { productsChart.destroy(); productsChart = null; }
+  
+  // Check if charts section is visible
+  const chartSection = document.getElementById('section-overview');
+  if (!chartSection || !chartSection.classList.contains('active')) {
+    return; // Don't render if not visible
+  }
+  
   // --- 1. Sales Trend Chart ---
   const salesCtx = document.getElementById('salesTrendChart');
   if (!salesCtx) return;
@@ -2383,8 +2466,6 @@ function renderCharts() {
     const date = new Date(d + 'T00:00:00');
     return date.toLocaleDateString('en-KE', { weekday: 'short', day: '2-digit' });
   });
-  
-  if (salesChart) { salesChart.destroy(); salesChart = null; }
   
   salesChart = new Chart(salesCtx.getContext('2d'), {
     type: 'bar',
@@ -2427,8 +2508,6 @@ function renderCharts() {
       labelEl.textContent = `Qualified: ${qualified} · Unqualified: ${unqualified}`;
     }
     
-    if (distChart) { distChart.destroy(); distChart = null; }
-    
     distChart = new Chart(distCtx.getContext('2d'), {
       type: 'doughnut',
       data: {
@@ -2464,8 +2543,6 @@ function renderCharts() {
     const commData = last7Days.map(date => 
       DB.sales.filter(s => s.date === date).reduce((sum, s) => sum + (parseFloat(s.commission) || 0), 0)
     );
-    
-    if (commissionChart) { commissionChart.destroy(); commissionChart = null; }
     
     commissionChart = new Chart(commCtx.getContext('2d'), {
       type: 'line',
@@ -2524,8 +2601,6 @@ function renderCharts() {
     const labels = sortedProducts.map(p => p[0].length > 15 ? p[0].substring(0, 15) + '...' : p[0]);
     const data = sortedProducts.map(p => p[1]);
     
-    if (productsChart) { productsChart.destroy(); productsChart = null; }
-    
     productsChart = new Chart(prodCtx.getContext('2d'), {
       type: 'bar',
       data: {
@@ -2568,12 +2643,18 @@ function renderCharts() {
     });
   }
 }
+  
 // ========= SEARCH =========
-function filterTable(tableId,q){
-  q=q.toLowerCase();
-  document.getElementById(tableId).querySelectorAll('tbody tr').forEach(r=>{
-    r.style.display=r.textContent.toLowerCase().includes(q)?'':'none';
-  });
+let searchTimeout;
+
+function filterTable(tableId, q) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        q = q.toLowerCase();
+        document.getElementById(tableId).querySelectorAll('tbody tr').forEach(r => {
+            r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    }, 300);
 }
 
 // ========= EXPORT =========
