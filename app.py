@@ -438,10 +438,22 @@ def award_points(did):
         pts = int(d.get("pts") or 0)
         if pts <= 0:
             return jsonify({"error": "Enter a valid number of points"}), 400
-        dist_resp = supabase.table('distributors').select('qualified').eq('id', did).execute()
+        
+        # Get current distributor data
+        dist_resp = supabase.table('distributors').select('points, qualified').eq('id', did).execute()
         if not dist_resp.data:
             return jsonify({"error": "Distributor not found"}), 404
-        was_qualified = bool(dist_resp.data[0].get("qualified", False))
+        
+        current_qualified = bool(dist_resp.data[0].get("qualified", False))
+        current_points = dist_resp.data[0].get('points', 0)
+        new_points = current_points + pts
+        
+        # Update distributor's points
+        supabase.table('distributors').update({
+            'points': new_points
+        }).eq('id', did).execute()
+        
+        # Add to points_log
         log_data = {
             "distributor_id": did,
             "points": pts,
@@ -450,11 +462,26 @@ def award_points(did):
             "log_date": today(),
         }
         supabase.table('points_log').insert(log_data).execute()
-        updated_resp = supabase.table('distributors').select('points, qualified').eq('id', did).execute()
-        after = updated_resp.data[0]
-        promoted = (not was_qualified) and bool(after.get("qualified", False))
-        return jsonify({"ok": True, "points": after.get("points", 0), "promoted": promoted}), 201
+        
+        # Check if distributor now qualifies
+        promoted = False
+        if new_points >= 500 and not current_qualified:
+            supabase.table('distributors').update({
+                'qualified': 1,
+                'qualified_date': today()
+            }).eq('id', did).execute()
+            promoted = True
+            print(f"🎉 Distributor {did} qualified with {new_points} PV!")
+        
+        return jsonify({
+            "ok": True, 
+            "points": new_points, 
+            "promoted": promoted,
+            "points_awarded": pts
+        }), 201
+        
     except Exception as e:
+        print(f"❌ Error in award_points: {e}")
         return jsonify({"error": str(e)}), 400
 
 @app.route("/api/distributors/<did>/qualify", methods=["POST"])
@@ -539,19 +566,61 @@ def create_sale():
         }
         supabase.table('sales').insert(data).execute()
         
+        # ===== FIX: Update distributor's points =====
         if points > 0:
-            log_data = {
-                "distributor_id": dist_id,
-                "points": points,
-                "reason": f"Sale #{sid} - {data['products']}",
-                "notes": f"Points from sale recorded on {data['sale_date']}",
-                "log_date": today(),
-            }
-            supabase.table('points_log').insert(log_data).execute()
-            print(f"✅ Awarded {points} points to distributor {dist_id} for sale {sid}")
+            # Get current distributor data
+            dist_resp = supabase.table('distributors').select('points, qualified').eq('id', dist_id).execute()
+            if dist_resp.data:
+                current_points = dist_resp.data[0].get('points', 0)
+                current_qualified = bool(dist_resp.data[0].get('qualified', False))
+                new_points = current_points + points
+                
+                # Update distributor's points
+                supabase.table('distributors').update({
+                    'points': new_points
+                }).eq('id', dist_id).execute()
+                
+                # Add to points_log
+                log_data = {
+                    "distributor_id": dist_id,
+                    "points": points,
+                    "reason": f"Sale #{sid} - {data['products']}",
+                    "notes": f"Points from sale recorded on {data['sale_date']}",
+                    "log_date": today(),
+                }
+                supabase.table('points_log').insert(log_data).execute()
+                
+                # Check if distributor now qualifies (500+ points)
+                if new_points >= 500 and not current_qualified:
+                    supabase.table('distributors').update({
+                        'qualified': 1,
+                        'qualified_date': today()
+                    }).eq('id', dist_id).execute()
+                    print(f"🎉 Distributor {dist_id} automatically qualified with {new_points} PV!")
+                    # Return promoted flag so frontend can show notification
+                    return jsonify({
+                        "id": sid, 
+                        "promoted": True,
+                        "points_awarded": points,
+                        "total_points": new_points
+                    }), 201
+                else:
+                    return jsonify({
+                        "id": sid,
+                        "promoted": False,
+                        "points_awarded": points,
+                        "total_points": new_points
+                    }), 201
+            else:
+                # Distributor not found - shouldn't happen but handle gracefully
+                print(f"⚠️ Distributor {dist_id} not found for points update")
+                return jsonify({"id": sid, "warning": "Distributor not found for points update"}), 201
         
+        # No points awarded
         return jsonify({"id": sid}), 201
+        
     except Exception as e:
+        print(f"❌ Error in create_sale: {e}")
         return jsonify({"error": str(e)}), 400
 
 @app.route("/api/sales/<sid>", methods=["DELETE"])
