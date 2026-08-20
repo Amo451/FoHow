@@ -6,7 +6,8 @@
 <title>FoHow Natural Solutions — Admin</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -645,6 +646,8 @@ tbody tr.client-clickable-row:active{background:var(--border);transform:scale(0.
   <div class="page-header">
     <div><div class="page-title">Commissions</div><div class="page-sub">Sales records and commission tracking</div></div>
     <div class="hdr-actions">
+      <button class="btn btn-gold" onclick="generateCommissionPDF()"><i class="ti ti-file-pdf"></i> Commission Report</button>
+      <button class="btn btn-primary" onclick="generateBusinessReportPDF()"><i class="ti ti-file-pdf"></i> Business Report</button>
       <button class="btn" onclick="exportSheet('commissions')"><i class="ti ti-file-spreadsheet"></i>Export</button>
       <button class="btn btn-primary" onclick="openModal('m-sale')"><i class="ti ti-plus"></i>Record sale</button>
     </div>
@@ -1348,7 +1351,10 @@ tbody tr.client-clickable-row:active{background:var(--border);transform:scale(0.
       <button class="modal-close" onclick="closeModal('m-detail')">×</button>
     </div>
     <div class="modal-body" id="detail-body"></div>
-    <div class="modal-footer"><button class="btn" onclick="closeModal('m-detail')">Close</button></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary btn-sm" onclick="generateDistributorPDF()"><i class="ti ti-file-pdf"></i> Download PDF</button>
+      <button class="btn" onclick="closeModal('m-detail')">Close</button>
+    </div>
   </div>
 </div>
 
@@ -1860,6 +1866,7 @@ async function savePoints(){
 }
 function openDetailModal(id){
   const d=DB.distributors.find(x=>x.id===id);if(!d)return;
+  currentDistributorId = id; 
   const sales=distSales(id);
   const comm=distComm(id);const paid=distPaid(id);const bal=comm-paid;
   const pts=d.points||0;const pct=Math.min(100,Math.round(pts/500*100));
@@ -2992,6 +2999,469 @@ function loadSettingsOnInit() {
   // Load settings from localStorage
   loadSettings();
   updateDatabaseStats();
+}
+  // ===== PDF REPORT GENERATION =====
+
+// Store current distributor ID for PDF generation
+let currentDistributorId = null;
+
+// Generate PDF for a distributor
+async function generateDistributorPDF() {
+    const id = currentDistributorId;
+    if (!id) { toast('No distributor selected'); return; }
+    
+    const d = DB.distributors.find(x => x.id === id);
+    if (!d) { toast('Distributor not found'); return; }
+    
+    const sales = distSales(id);
+    const comm = distComm(id);
+    const paid = distPaid(id);
+    const balance = comm - paid;
+    const pts = d.points || 0;
+    const qualified = d.qualified ? '✅ Qualified Distributor' : '⏳ Unqualified (Need 500+ PV)';
+    const pct = Math.min(100, Math.round(pts / 500 * 100));
+    
+    // Create report content
+    const report = document.createElement('div');
+    report.id = 'pdf-report';
+    report.style.cssText = `
+        padding: 40px;
+        font-family: 'Georgia', serif;
+        background: white;
+        max-width: 800px;
+        margin: 0 auto;
+        color: #1a1614;
+    `;
+    
+    report.innerHTML = `
+        <!-- Header -->
+        <div style="text-align: center; border-bottom: 3px solid #8B1A1A; padding-bottom: 20px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 6px;">
+                <div style="
+                    width: 50px; 
+                    height: 50px; 
+                    border-radius: 50%; 
+                    border: 2px solid #8B1A1A;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 18px;
+                    font-weight: 700;
+                    color: #8B1A1A;
+                ">FH</div>
+                <div>
+                    <div style="font-size: 22px; font-weight: 700; color: #8B1A1A;">FoHow Natural Solutions</div>
+                    <div style="font-size: 12px; color: #6b5f57; font-style: italic;">Distributor Performance Report</div>
+                </div>
+            </div>
+            <div style="font-size: 12px; color: #a09288;">
+                Generated on ${new Date().toLocaleString('en-KE', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </div>
+        </div>
+        
+        <!-- Distributor Info -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; background: #f7f4f0; padding: 16px; border-radius: 8px;">
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; color: #6b5f57; letter-spacing: 0.5px;">Name</div>
+                <div style="font-size: 18px; font-weight: 700; color: #8B1A1A;">${d.name}</div>
+            </div>
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; color: #6b5f57; letter-spacing: 0.5px;">Status</div>
+                <div style="font-size: 14px; font-weight: 600; color: ${d.qualified ? '#2d6a2d' : '#c25a00'};">${qualified}</div>
+            </div>
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; color: #6b5f57; letter-spacing: 0.5px;">Phone</div>
+                <div style="font-size: 14px;">${d.phone || '—'}</div>
+            </div>
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; color: #6b5f57; letter-spacing: 0.5px;">Location</div>
+                <div style="font-size: 14px;">${d.location || '—'}</div>
+            </div>
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; color: #6b5f57; letter-spacing: 0.5px;">Active Since</div>
+                <div style="font-size: 14px;">${fmtDate(d.date)}</div>
+            </div>
+            <div>
+                <div style="font-size: 11px; text-transform: uppercase; color: #6b5f57; letter-spacing: 0.5px;">Total PV / Points</div>
+                <div style="font-size: 18px; font-weight: 700; color: #b8860b;">${pts} PV</div>
+                ${!d.qualified ? `
+                    <div style="background: #e8d08a; border-radius: 4px; height: 6px; margin-top: 4px; width: 100%;">
+                        <div style="background: #b8860b; border-radius: 4px; height: 100%; width: ${pct}%;"></div>
+                    </div>
+                    <div style="font-size: 10px; color: #6b5f57; margin-top: 2px;">${500 - pts} PV to qualify</div>
+                ` : ''}
+            </div>
+        </div>
+        
+        <!-- Stats Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 24px;">
+            <div style="background: #f2ede8; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 22px; font-weight: 700; color: #8B1A1A;">${sales.length}</div>
+                <div style="font-size: 11px; color: #6b5f57; text-transform: uppercase; letter-spacing: 0.5px;">Total Sales</div>
+            </div>
+            <div style="background: #fdf8e8; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 18px; font-weight: 700; color: #b8860b;">${fmtKsh(comm)}</div>
+                <div style="font-size: 11px; color: #6b5f57; text-transform: uppercase; letter-spacing: 0.5px;">Commission</div>
+            </div>
+            <div style="background: #edf7ed; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 18px; font-weight: 700; color: #2d6a2d;">${fmtKsh(paid)}</div>
+                <div style="font-size: 11px; color: #6b5f57; text-transform: uppercase; letter-spacing: 0.5px;">Paid Out</div>
+            </div>
+            <div style="background: #fff3e8; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 18px; font-weight: 700; color: #c25a00;">${fmtKsh(balance)}</div>
+                <div style="font-size: 11px; color: #6b5f57; text-transform: uppercase; letter-spacing: 0.5px;">Balance</div>
+            </div>
+        </div>
+        
+        <!-- Sales History -->
+        <div style="margin-bottom: 20px;">
+            <div style="font-size: 16px; font-weight: 700; color: #8B1A1A; border-bottom: 2px solid #8B1A1A; padding-bottom: 8px; margin-bottom: 12px;">
+                📋 Sales History (${sales.length})
+            </div>
+            ${sales.length > 0 ? `
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #f2ede8;">
+                            <th style="padding: 8px 10px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b5f57;">Date</th>
+                            <th style="padding: 8px 10px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b5f57;">Products</th>
+                            <th style="padding: 8px 10px; text-align: right; font-size: 11px; text-transform: uppercase; color: #6b5f57;">Value</th>
+                            <th style="padding: 8px 10px; text-align: right; font-size: 11px; text-transform: uppercase; color: #6b5f57;">Commission</th>
+                            <th style="padding: 8px 10px; text-align: center; font-size: 11px; text-transform: uppercase; color: #6b5f57;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sales.sort((a,b) => new Date(b.date) - new Date(a.date)).map(s => `
+                            <tr style="border-bottom: 1px solid #e0d8d0;">
+                                <td style="padding: 8px 10px;">${fmtDate(s.date)}</td>
+                                <td style="padding: 8px 10px;">${s.products || '—'}</td>
+                                <td style="padding: 8px 10px; text-align: right;">${fmtKsh(s.value)}</td>
+                                <td style="padding: 8px 10px; text-align: right; font-weight: 600;">${fmtKsh(s.commission)}</td>
+                                <td style="padding: 8px 10px; text-align: center;">
+                                    <span style="padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; background: ${s.paid ? '#edf7ed' : '#fff3e8'}; color: ${s.paid ? '#2d6a2d' : '#c25a00'};">
+                                        ${s.paid ? '✅ Paid' : '⏳ Pending'}
+                                    </span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            ` : `
+                <div style="text-align: center; padding: 20px; color: #a09288; font-style: italic;">No sales recorded yet.</div>
+            `}
+        </div>
+        
+        <!-- Points History -->
+        ${(d.pointsLog && d.pointsLog.length > 0) ? `
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 16px; font-weight: 700; color: #b8860b; border-bottom: 2px solid #b8860b; padding-bottom: 8px; margin-bottom: 12px;">
+                    ⭐ Points History (${d.points || 0} PV Total)
+                </div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                    <thead>
+                        <tr style="background: #fdf8e8;">
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b5f57;">Date</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b5f57;">Reason</th>
+                            <th style="padding: 6px 10px; text-align: right; font-size: 11px; text-transform: uppercase; color: #6b5f57;">Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${d.pointsLog.slice().reverse().map(p => `
+                            <tr style="border-bottom: 1px solid #e0d8d0;">
+                                <td style="padding: 6px 10px;">${fmtDate(p.date)}</td>
+                                <td style="padding: 6px 10px;">${p.reason || 'Points awarded'}</td>
+                                <td style="padding: 6px 10px; text-align: right; font-weight: 600; color: #b8860b;">+${p.pts} PV</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        ` : ''}
+        
+        <!-- Footer -->
+        <div style="text-align: center; border-top: 2px solid #e0d8d0; padding-top: 16px; margin-top: 20px; font-size: 11px; color: #a09288;">
+            <div>© ${new Date().getFullYear()} FoHow Natural Solutions — Yatta Digital Solutions Ltd</div>
+            <div style="margin-top: 4px;">This report is confidential and for authorized use only.</div>
+        </div>
+    `;
+    
+    document.body.appendChild(report);
+    
+    // Generate PDF
+    try {
+        toast('📄 Generating PDF...');
+        
+        const opt = {
+            margin: [0.5, 0.5, 0.5, 0.5],
+            filename: `FoHow_Distributor_${d.name}_${today()}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                letterRendering: true,
+            },
+            jsPDF: {
+                unit: 'in',
+                format: 'a4',
+                orientation: 'portrait'
+            },
+            pagebreak: { mode: 'avoid-all' }
+        };
+        
+        await html2pdf().set(opt).from(report).save();
+        toast('✅ PDF downloaded successfully!');
+    } catch(err) {
+        toast('❌ Error generating PDF: ' + err.message);
+    }
+    
+    // Clean up
+    setTimeout(() => {
+        if (report.parentNode) report.remove();
+    }, 1000);
+}
+
+// Generate commission report PDF
+async function generateCommissionPDF() {
+    const total = DB.sales.reduce((a, s) => a + (+s.value || 0), 0);
+    const totComm = DB.sales.reduce((a, s) => a + (+s.commission || 0), 0);
+    const paid = DB.sales.filter(s => s.paid).reduce((a, s) => a + (+s.commission || 0), 0);
+    const pending = totComm - paid;
+    
+    const report = document.createElement('div');
+    report.id = 'pdf-report';
+    report.style.cssText = `
+        padding: 40px;
+        font-family: 'Georgia', serif;
+        background: white;
+        max-width: 800px;
+        margin: 0 auto;
+        color: #1a1614;
+    `;
+    
+    report.innerHTML = `
+        <div style="text-align: center; border-bottom: 3px solid #8B1A1A; padding-bottom: 20px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 6px;">
+                <div style="
+                    width: 50px; 
+                    height: 50px; 
+                    border-radius: 50%; 
+                    border: 2px solid #8B1A1A;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 18px;
+                    font-weight: 700;
+                    color: #8B1A1A;
+                ">FH</div>
+                <div>
+                    <div style="font-size: 22px; font-weight: 700; color: #8B1A1A;">FoHow Natural Solutions</div>
+                    <div style="font-size: 12px; color: #6b5f57; font-style: italic;">Commission Report</div>
+                </div>
+            </div>
+            <div style="font-size: 12px; color: #a09288;">
+                Generated on ${new Date().toLocaleString('en-KE', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 24px;">
+            <div style="background: #f2ede8; padding: 16px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 22px; font-weight: 700; color: #8B1A1A;">${DB.sales.length}</div>
+                <div style="font-size: 11px; color: #6b5f57; text-transform: uppercase;">Total Sales</div>
+            </div>
+            <div style="background: #f2ede8; padding: 16px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 20px; font-weight: 700; color: #8B1A1A;">${fmtKsh(total)}</div>
+                <div style="font-size: 11px; color: #6b5f57; text-transform: uppercase;">Total Value</div>
+            </div>
+            <div style="background: #fdf8e8; padding: 16px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 20px; font-weight: 700; color: #b8860b;">${fmtKsh(totComm)}</div>
+                <div style="font-size: 11px; color: #6b5f57; text-transform: uppercase;">Commission</div>
+            </div>
+            <div style="background: ${pending > 0 ? '#fff3e8' : '#edf7ed'}; padding: 16px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 20px; font-weight: 700; color: ${pending > 0 ? '#c25a00' : '#2d6a2d'};">${fmtKsh(pending)}</div>
+                <div style="font-size: 11px; color: #6b5f57; text-transform: uppercase;">Pending</div>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <div style="font-size: 16px; font-weight: 700; color: #8B1A1A; border-bottom: 2px solid #8B1A1A; padding-bottom: 8px; margin-bottom: 12px;">
+                📊 Top Distributors by Commission
+            </div>
+            ${DB.distributors.length > 0 ? `
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #f2ede8;">
+                            <th style="padding: 8px 10px; text-align: left;">Distributor</th>
+                            <th style="padding: 8px 10px; text-align: center;">Sales</th>
+                            <th style="padding: 8px 10px; text-align: right;">Commission</th>
+                            <th style="padding: 8px 10px; text-align: right;">Paid</th>
+                            <th style="padding: 8px 10px; text-align: right;">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${DB.distributors.sort((a,b) => distComm(b.id) - distComm(a.id)).slice(0, 20).map(d => `
+                            <tr style="border-bottom: 1px solid #e0d8d0;">
+                                <td style="padding: 8px 10px; font-weight: 600;">${d.name}</td>
+                                <td style="padding: 8px 10px; text-align: center;">${distSales(d.id).length}</td>
+                                <td style="padding: 8px 10px; text-align: right;">${fmtKsh(distComm(d.id))}</td>
+                                <td style="padding: 8px 10px; text-align: right; color: #2d6a2d;">${fmtKsh(distPaid(d.id))}</td>
+                                <td style="padding: 8px 10px; text-align: right; font-weight: 600; color: ${(distComm(d.id) - distPaid(d.id)) > 0 ? '#c25a00' : '#2d6a2d'};">${fmtKsh(distComm(d.id) - distPaid(d.id))}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            ` : `<div style="text-align: center; padding: 20px; color: #a09288; font-style: italic;">No distributors yet.</div>`}
+        </div>
+        
+        <div style="text-align: center; border-top: 2px solid #e0d8d0; padding-top: 16px; margin-top: 20px; font-size: 11px; color: #a09288;">
+            <div>© ${new Date().getFullYear()} FoHow Natural Solutions — Yatta Digital Solutions Ltd</div>
+        </div>
+    `;
+    
+    document.body.appendChild(report);
+    
+    try {
+        toast('📄 Generating Commission Report...');
+        await html2pdf().set({
+            margin: [0.5, 0.5, 0.5, 0.5],
+            filename: `FoHow_Commission_Report_${today()}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        }).from(report).save();
+        toast('✅ PDF downloaded successfully!');
+    } catch(err) {
+        toast('❌ Error generating PDF: ' + err.message);
+    }
+    
+    setTimeout(() => {
+        if (report.parentNode) report.remove();
+    }, 1000);
+}
+
+// Generate full business report PDF
+async function generateBusinessReportPDF() {
+    const totalNetwork = DB.students.length + DB.distributors.length + DB.clients.length;
+    const totalSales = DB.sales.length;
+    const totalRevenue = DB.sales.reduce((a, s) => a + (+s.value || 0), 0);
+    const totalCommission = DB.sales.reduce((a, s) => a + (+s.commission || 0), 0);
+    const qualifiedCount = DB.distributors.filter(d => d.qualified).length;
+    const totalPoints = DB.distributors.reduce((sum, d) => sum + (d.points || 0), 0);
+    
+    const report = document.createElement('div');
+    report.id = 'pdf-report';
+    report.style.cssText = `
+        padding: 40px;
+        font-family: 'Georgia', serif;
+        background: white;
+        max-width: 800px;
+        margin: 0 auto;
+        color: #1a1614;
+    `;
+    
+    report.innerHTML = `
+        <div style="text-align: center; border-bottom: 3px solid #8B1A1A; padding-bottom: 20px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 6px;">
+                <div style="
+                    width: 50px; 
+                    height: 50px; 
+                    border-radius: 50%; 
+                    border: 2px solid #8B1A1A;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 18px;
+                    font-weight: 700;
+                    color: #8B1A1A;
+                ">FH</div>
+                <div>
+                    <div style="font-size: 22px; font-weight: 700; color: #8B1A1A;">FoHow Natural Solutions</div>
+                    <div style="font-size: 12px; color: #6b5f57; font-style: italic;">Business Summary Report</div>
+                </div>
+            </div>
+            <div style="font-size: 12px; color: #a09288;">
+                Generated on ${new Date().toLocaleString('en-KE', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 24px;">
+            <div style="background: #f2ede8; padding: 16px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 22px; font-weight: 700; color: #8B1A1A;">${totalNetwork}</div>
+                <div style="font-size: 11px; color: #6b5f57; text-transform: uppercase;">Total Network</div>
+            </div>
+            <div style="background: #f2ede8; padding: 16px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 22px; font-weight: 700; color: #185FA5;">${DB.distributors.length}</div>
+                <div style="font-size: 11px; color: #6b5f57; text-transform: uppercase;">Distributors</div>
+            </div>
+            <div style="background: #edf7ed; padding: 16px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 22px; font-weight: 700; color: #2d6a2d;">${qualifiedCount}</div>
+                <div style="font-size: 11px; color: #6b5f57; text-transform: uppercase;">Qualified</div>
+            </div>
+            <div style="background: #fdf8e8; padding: 16px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 18px; font-weight: 700; color: #b8860b;">${totalPoints}</div>
+                <div style="font-size: 11px; color: #6b5f57; text-transform: uppercase;">Total PV</div>
+            </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 24px;">
+            <div style="background: #f2ede8; padding: 16px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 20px; font-weight: 700; color: #8B1A1A;">${totalSales}</div>
+                <div style="font-size: 11px; color: #6b5f57; text-transform: uppercase;">Total Sales</div>
+            </div>
+            <div style="background: #f2ede8; padding: 16px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 18px; font-weight: 700; color: #8B1A1A;">${fmtKsh(totalRevenue)}</div>
+                <div style="font-size: 11px; color: #6b5f57; text-transform: uppercase;">Revenue</div>
+            </div>
+            <div style="background: #fdf8e8; padding: 16px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 18px; font-weight: 700; color: #b8860b;">${fmtKsh(totalCommission)}</div>
+                <div style="font-size: 11px; color: #6b5f57; text-transform: uppercase;">Commission</div>
+            </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+            <div style="background: #f7f4f0; padding: 12px 16px; border-radius: 8px; border-left: 4px solid #8B1A1A;">
+                <div style="font-size: 12px; color: #6b5f57;">Students</div>
+                <div style="font-size: 20px; font-weight: 700;">${DB.students.length}</div>
+            </div>
+            <div style="background: #f7f4f0; padding: 12px 16px; border-radius: 8px; border-left: 4px solid #185FA5;">
+                <div style="font-size: 12px; color: #6b5f57;">Clients</div>
+                <div style="font-size: 20px; font-weight: 700;">${DB.clients.length}</div>
+            </div>
+        </div>
+        
+        <div style="background: #f7f4f0; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+            <div style="font-weight: 600; margin-bottom: 8px;">📈 Quick Stats</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 13px;">
+                <div>• Average Sale Value: ${fmtKsh(totalSales > 0 ? Math.round(totalRevenue / totalSales) : 0)}</div>
+                <div>• Average Commission: ${fmtKsh(totalSales > 0 ? Math.round(totalCommission / totalSales) : 0)}</div>
+                <div>• Qualification Rate: ${DB.distributors.length > 0 ? Math.round((qualifiedCount / DB.distributors.length) * 100) : 0}%</div>
+                <div>• Avg PV per Distributor: ${DB.distributors.length > 0 ? Math.round(totalPoints / DB.distributors.length) : 0}</div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; border-top: 2px solid #e0d8d0; padding-top: 16px; margin-top: 20px; font-size: 11px; color: #a09288;">
+            <div>© ${new Date().getFullYear()} FoHow Natural Solutions — Yatta Digital Solutions Ltd</div>
+            <div style="margin-top: 4px;">This report is confidential and for authorized use only.</div>
+        </div>
+    `;
+    
+    document.body.appendChild(report);
+    
+    try {
+        toast('📄 Generating Business Report...');
+        await html2pdf().set({
+            margin: [0.5, 0.5, 0.5, 0.5],
+            filename: `FoHow_Business_Report_${today()}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        }).from(report).save();
+        toast('✅ PDF downloaded successfully!');
+    } catch(err) {
+        toast('❌ Error generating PDF: ' + err.message);
+    }
+    
+    setTimeout(() => {
+        if (report.parentNode) report.remove();
+    }, 1000);
 }
 // ========= INIT =========
 (async function init(){
