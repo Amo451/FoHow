@@ -3086,16 +3086,12 @@ function loadSettingsOnInit() {
 // Store current distributor ID for PDF generation
 let currentDistributorId = null;
 
-// Generate PDF for a distributor
-// Generate PDF for a distributor - OPTIMIZED
+// Generate PDF for a distributor - WITH INSTANT LOADING
 async function generateDistributorPDF() {
     const id = currentDistributorId;
     if (!id) { toast('No distributor selected'); return; }
     
-    const d = DB.distributors.find(x => x.id === id);
-    if (!d) { toast('Distributor not found'); return; }
-    
-    // ===== SHOW LOADING OVERLAY =====
+    // ===== SHOW LOADING OVERLAY IMMEDIATELY =====
     const loadingId = 'pdf-loading-' + Date.now();
     const overlay = document.createElement('div');
     overlay.id = loadingId;
@@ -3135,6 +3131,21 @@ async function generateDistributorPDF() {
         </div>
     `;
     document.body.appendChild(overlay);
+    
+    // Force a reflow so the overlay renders immediately
+    overlay.offsetHeight;
+    
+    // Use setTimeout to let the overlay render before heavy processing
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    // Now do the heavy work
+    const d = DB.distributors.find(x => x.id === id);
+    if (!d) { 
+        toast('Distributor not found');
+        const el = document.getElementById(loadingId);
+        if (el) el.remove();
+        return; 
+    }
     
     const sales = distSales(id);
     const comm = distComm(id);
@@ -3344,10 +3355,9 @@ async function generateDistributorPDF() {
         if (el) el.remove();
     }, 1000);
 }
-
-// Generate commission report PDF - OPTIMIZED
+// Generate commission report PDF - WITH INSTANT LOADING
 async function generateCommissionPDF() {
-    // ===== SHOW LOADING OVERLAY =====
+    // ===== SHOW LOADING OVERLAY IMMEDIATELY =====
     const loadingId = 'pdf-loading-' + Date.now();
     const overlay = document.createElement('div');
     overlay.id = loadingId;
@@ -3387,6 +3397,12 @@ async function generateCommissionPDF() {
         </div>
     `;
     document.body.appendChild(overlay);
+    
+    // Force a reflow so the overlay renders immediately
+    overlay.offsetHeight;
+    
+    // Use setTimeout to let the overlay render before heavy processing
+    await new Promise(resolve => setTimeout(resolve, 50));
     
     const total = DB.sales.reduce((a, s) => a + (+s.value || 0), 0);
     const totComm = DB.sales.reduce((a, s) => a + (+s.commission || 0), 0);
@@ -3506,9 +3522,9 @@ async function generateCommissionPDF() {
     }, 1000);
 }
 
-// Generate full business report PDF - OPTIMIZED
+// Generate full business report PDF - WITH INSTANT LOADING
 async function generateBusinessReportPDF() {
-    // ===== SHOW LOADING OVERLAY =====
+    // ===== SHOW LOADING OVERLAY IMMEDIATELY =====
     const loadingId = 'pdf-loading-' + Date.now();
     const overlay = document.createElement('div');
     overlay.id = loadingId;
@@ -3548,6 +3564,12 @@ async function generateBusinessReportPDF() {
         </div>
     `;
     document.body.appendChild(overlay);
+    
+    // Force a reflow so the overlay renders immediately
+    overlay.offsetHeight;
+    
+    // Use setTimeout to let the overlay render before heavy processing
+    await new Promise(resolve => setTimeout(resolve, 50));
     
     const totalNetwork = DB.students.length + DB.distributors.length + DB.clients.length;
     const totalSales = DB.sales.length;
